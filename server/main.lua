@@ -397,6 +397,25 @@ lib.callback.register('zdrugs:getPlantData', function(source, plantId)
 end)
 
 -- ============================================
+-- CONSOMMATION DE DROGUES (OPTIONNEL)
+-- ============================================
+
+--- Gère la consommation d'une drogue
+RegisterNetEvent('zdrugs:server:consumeDrug', function(drugType)
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return end
+
+    -- Logger la consommation
+    logAction(xPlayer.identifier, 'consume', drugType, {
+        timestamp = os.time()
+    })
+
+    -- Vous pouvez ajouter des effets ici si vous utilisez un système de status
+    -- Par exemple: TriggerEvent('esx_status:add', source, 'drug', 100000)
+end)
+
+-- ============================================
 -- EXPORTS
 -- ============================================
 

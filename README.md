@@ -128,9 +128,11 @@ Config.Limites = {
 
 #### Planter
 1. Avoir une `graine_coca` ou `graine_weed` dans l'inventaire
-2. Utiliser l'item dans ox_inventory → "Planter"
-3. Choisir un emplacement
-4. Appuyer sur `[E]` pour confirmer ou `[X]` pour annuler
+2. **Clic droit** sur l'item dans ox_inventory → Cliquer sur **"Utiliser"**
+3. Choisir un emplacement pour planter (la graine apparaît en preview devant vous)
+4. Appuyer sur `[E]` pour confirmer la plantation ou `[X]` pour annuler
+
+**⚠️ Important** : Les graines sont des items **usables** (utilisables). Vous devez faire **clic droit → Utiliser** sur la graine dans votre inventaire pour lancer le mode plantation.
 
 #### Entretenir
 1. Viser la plante avec ox_target

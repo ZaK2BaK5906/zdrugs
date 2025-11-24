@@ -49,13 +49,9 @@
     stack = true,
     close = true,
     description = 'Graine de plant de coca',
-    buttons = {
-        {
-            label = 'Planter',
-            action = function(slot)
-                TriggerEvent('zdrugs:client:plantSeed', 'cocaine', slot)
-            end
-        }
+    client = {
+        usable = true,
+        export = 'zdrugs.useGraineCoca'
     }
 },
 
@@ -112,13 +108,9 @@
     stack = true,
     close = true,
     description = 'Graine de plant de cannabis',
-    buttons = {
-        {
-            label = 'Planter',
-            action = function(slot)
-                TriggerEvent('zdrugs:client:plantSeed', 'weed', slot)
-            end
-        }
+    client = {
+        usable = true,
+        export = 'zdrugs.useGraineWeed'
     }
 },
 
