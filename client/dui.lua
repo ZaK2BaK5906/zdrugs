@@ -1,23 +1,25 @@
 -- ============================================
--- CLIENT DUI - Interface NUI pour l'état des plantes
+-- CLIENT NUI - Interface pour la gestion des plantes
 -- ============================================
 
 local nuiOpen = false
-local maxDistance = 5.0  -- Distance maximum (5 mètres)
 
 -- ============================================
--- GESTION DU NUI
+-- FONCTIONS
 -- ============================================
 
---- Affiche le NUI avec les données de la plante
----@param plant table Données de la plante
----@param drugConfig table Configuration de la drogue
-local function showNUI(plant, drugConfig)
-    print('[ZDRUGS] showNUI appelé')  -- DEBUG
+--- Ouvre le NUI avec les données de la plante
+local function openNUI(plantId, plant)
+    print('[ZDRUGS] Ouverture NUI pour plante:', plantId)
 
-    local growthPercent = math.floor(plant.growthPercent or 0)
+    local drugConfig = Config.Drogues[plant.drugType]
+    if not drugConfig then
+        print('[ZDRUGS] Config drogue introuvable')
+        return
+    end
 
     -- Calculer le temps restant
+    local growthPercent = plant.growthPercent or 0
     local totalDuration = drugConfig.croissance.duree_totale
     local remainingPercent = 100 - growthPercent
     local timeRemaining = (totalDuration * remainingPercent) / 100
@@ -25,38 +27,32 @@ local function showNUI(plant, drugConfig)
     local seconds = math.floor(timeRemaining % 60)
     local timeText = plant.readyForHarvest and 'PRÊT !' or string.format('%02d:%02d', minutes, seconds)
 
-    print(('[ZDRUGS] Envoi NUI - Drug: %s, Growth: %d%%'):format(drugConfig.label, growthPercent))  -- DEBUG
-
     -- Envoyer les données au NUI
     SendNUIMessage({
-        action = 'show',
-        drugLabel = drugConfig.label,
-        growthPercent = growthPercent,
-        watered = plant.watered,
-        fertilized = plant.fertilized,
-        timeText = timeText
+        type = 'openMenu',
+        plantId = plantId,
+        plantData = {
+            label = drugConfig.label,
+            growthPercent = growthPercent,
+            watered = plant.watered,
+            fertilized = plant.fertilized,
+            readyForHarvest = plant.readyForHarvest,
+            timeText = timeText
+        }
     })
 
-    SetNuiFocus(false, false)  -- Pas de focus souris, juste affichage
+    SetNuiFocus(true, true)
     nuiOpen = true
 
-    print('[ZDRUGS] NUI affiché')  -- DEBUG
-
-    -- Auto-fermer après 15 secondes
-    SetTimeout(15000, function()
-        if nuiOpen then
-            print('[ZDRUGS] Auto-close NUI')  -- DEBUG
-            hideNUI()
-        end
-    end)
+    print('[ZDRUGS] NUI ouvert avec succès')
 end
 
---- Cache le NUI
-function hideNUI()
-    print('[ZDRUGS] hideNUI appelé')  -- DEBUG
+--- Ferme le NUI
+local function closeNUI()
+    print('[ZDRUGS] Fermeture NUI')
 
     SendNUIMessage({
-        action = 'hide'
+        type = 'closeMenu'
     })
 
     SetNuiFocus(false, false)
@@ -64,88 +60,207 @@ function hideNUI()
 end
 
 -- ============================================
--- CALLBACK NUI
+-- EVENTS
 -- ============================================
 
-RegisterNUICallback('close', function(data, cb)
-    print('[ZDRUGS] NUI callback close')  -- DEBUG
-    hideNUI()
+--- Event pour afficher l'état de la plante
+RegisterNetEvent('zdrugs:client:viewPlantState', function(plantId)
+    print('[ZDRUGS] Demande d\'affichage état plante:', plantId)
+
+    lib.callback('zdrugs:getPlantData', false, function(plant)
+        if not plant then
+            print('[ZDRUGS] Pas de données de plante')
+            lib.notify({
+                type = 'error',
+                description = 'Impossible de récupérer les données de la plante'
+            })
+            return
+        end
+
+        print('[ZDRUGS] Données reçues, ouverture NUI')
+        openNUI(plantId, plant)
+    end, plantId)
+end)
+
+-- ============================================
+-- CALLBACKS NUI
+-- ============================================
+
+--- Callback pour fermer le menu
+RegisterNUICallback('closeMenu', function(data, cb)
+    print('[ZDRUGS] Callback closeMenu')
+    closeNUI()
+    cb('ok')
+end)
+
+--- Callback pour arroser la plante
+RegisterNUICallback('waterPlant', function(data, cb)
+    print('[ZDRUGS] Callback waterPlant:', data.plantId)
+
+    closeNUI()
+
+    -- Lancer l'animation et envoyer au serveur
+    local playerPed = PlayerPedId()
+    local animDict = Config.Animations.arroser.dict
+    local animName = Config.Animations.arroser.anim
+
+    lib.requestAnimDict(animDict, 5000)
+
+    if lib.progressBar({
+        duration = 5000,
+        label = 'Arrosage de la plante...',
+        useWhileDead = false,
+        canCancel = true,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = {
+            dict = animDict,
+            clip = animName
+        }
+    }) then
+        ClearPedTasks(playerPed)
+        TriggerServerEvent('zdrugs:server:waterPlant', data.plantId)
+        print('[ZDRUGS] Arrosage terminé')
+    else
+        ClearPedTasks(playerPed)
+        print('[ZDRUGS] Arrosage annulé')
+    end
+
+    cb('ok')
+end)
+
+--- Callback pour mettre de l'engrais
+RegisterNUICallback('fertilizePlant', function(data, cb)
+    print('[ZDRUGS] Callback fertilizePlant:', data.plantId)
+
+    closeNUI()
+
+    -- Lancer l'animation et envoyer au serveur
+    local playerPed = PlayerPedId()
+    local animDict = Config.Animations.engrais.dict
+    local animName = Config.Animations.engrais.anim
+
+    lib.requestAnimDict(animDict, 5000)
+
+    if lib.progressBar({
+        duration = 5000,
+        label = 'Application de l\'engrais...',
+        useWhileDead = false,
+        canCancel = true,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = {
+            dict = animDict,
+            clip = animName
+        }
+    }) then
+        ClearPedTasks(playerPed)
+        TriggerServerEvent('zdrugs:server:fertilizePlant', data.plantId)
+        print('[ZDRUGS] Engrais appliqué')
+    else
+        ClearPedTasks(playerPed)
+        print('[ZDRUGS] Engrais annulé')
+    end
+
+    cb('ok')
+end)
+
+--- Callback pour récolter la plante
+RegisterNUICallback('harvestPlant', function(data, cb)
+    print('[ZDRUGS] Callback harvestPlant:', data.plantId)
+
+    closeNUI()
+
+    -- Lancer l'animation et envoyer au serveur
+    local playerPed = PlayerPedId()
+    local animDict = Config.Animations.recolte.dict
+    local animName = Config.Animations.recolte.anim
+
+    lib.requestAnimDict(animDict, 5000)
+
+    if lib.progressBar({
+        duration = 5000,
+        label = 'Récolte de la plante...',
+        useWhileDead = false,
+        canCancel = true,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = {
+            dict = animDict,
+            clip = animName
+        }
+    }) then
+        ClearPedTasks(playerPed)
+        TriggerServerEvent('zdrugs:server:harvestPlant', data.plantId)
+        print('[ZDRUGS] Récolte terminée')
+    else
+        ClearPedTasks(playerPed)
+        print('[ZDRUGS] Récolte annulée')
+    end
+
     cb('ok')
 end)
 
 -- ============================================
--- EVENTS
+-- SYNCHRONISATION
 -- ============================================
 
---- Affiche l'état de la plante avec vérification de distance
-RegisterNetEvent('zdrugs:client:showPlantMenu', function(plantId)
-    print(('[ZDRUGS] showPlantMenu appelé pour plantId: %s'):format(plantId))  -- DEBUG
-
-    lib.callback('zdrugs:getPlantData', false, function(plant)
-        if not plant then
-            print('[ZDRUGS] Pas de données de plante')  -- DEBUG
-            return
+--- Sync toutes les plantes
+RegisterNetEvent('zdrugs:client:syncAllPlants', function(plants)
+    -- Supprimer toutes les plantes locales
+    for plantId, plantData in pairs(LocalPlants) do
+        if DoesEntityExist(plantData.object) then
+            DeleteEntity(plantData.object)
         end
-
-        print(('[ZDRUGS] Données reçues - Type: %s'):format(plant.drugType))  -- DEBUG
-
-        local drugConfig = Config.Drogues[plant.drugType]
-        if not drugConfig then
-            print('[ZDRUGS] Config drogue introuvable')  -- DEBUG
-            return
+        if plantData.targetId then
+            exports.ox_target:removeLocalEntity(plantData.object, plantData.targetId)
         end
+    end
 
-        -- Vérifier la distance avec la plante
-        local playerPed = PlayerPedId()
-        local playerCoords = GetEntityCoords(playerPed)
-        local plantCoords = vector3(plant.coords.x, plant.coords.y, plant.coords.z)
-        local distance = #(playerCoords - plantCoords)
+    LocalPlants = {}
 
-        print(('[ZDRUGS] Distance plante: %.2fm (max: %.2fm)'):format(distance, maxDistance))  -- DEBUG
-
-        if distance > maxDistance then
-            lib.notify({
-                type = 'error',
-                description = 'Vous êtes trop loin de la plante !'
-            })
-            print('[ZDRUGS] Trop loin de la plante')  -- DEBUG
-            return
-        end
-
-        -- Afficher le NUI
-        showNUI(plant, drugConfig)
-    end, plantId)
+    -- Créer les nouvelles plantes
+    for plantId, plant in pairs(plants) do
+        spawnPlant(plantId, plant)
+    end
 end)
 
---- Event principal pour afficher l'état
-AddEventHandler('zdrugs:client:viewPlantState', function(plantId)
-    print(('[ZDRUGS] viewPlantState appelé pour plantId: %s'):format(plantId))  -- DEBUG
-    TriggerEvent('zdrugs:client:showPlantMenu', plantId)
+--- Sync une seule plante
+RegisterNetEvent('zdrugs:client:syncPlant', function(plantId, plant)
+    if LocalPlants[plantId] then
+        -- Mettre à jour la plante existante
+        LocalPlants[plantId].watered = plant.watered
+        LocalPlants[plantId].fertilized = plant.fertilized
+        LocalPlants[plantId].growthPercent = plant.growthPercent
+        LocalPlants[plantId].growthState = plant.growthState
+        LocalPlants[plantId].readyForHarvest = plant.readyForHarvest
+
+        -- Mettre à jour le prop si l'état de croissance a changé
+        if plant.growthState ~= LocalPlants[plantId].lastGrowthState then
+            updatePlantProp(plantId, plant)
+        end
+    end
 end)
 
--- ============================================
--- GESTION DES TOUCHES
--- ============================================
-
-CreateThread(function()
-    while true do
-        Wait(0)
-
-        if nuiOpen then
-            -- Fermer avec X
-            if IsControlJustPressed(0, 73) then  -- X
-                print('[ZDRUGS] Touche X pressée')  -- DEBUG
-                hideNUI()
-            end
-
-            -- Fermer avec ESC
-            if IsControlJustPressed(0, 322) then  -- ESC
-                print('[ZDRUGS] Touche ESC pressée')  -- DEBUG
-                hideNUI()
-            end
-        else
-            Wait(500)  -- Réduire la charge CPU quand fermé
+--- Supprimer une plante
+RegisterNetEvent('zdrugs:client:removePlant', function(plantId)
+    if LocalPlants[plantId] then
+        if DoesEntityExist(LocalPlants[plantId].object) then
+            DeleteEntity(LocalPlants[plantId].object)
         end
+        if LocalPlants[plantId].targetId then
+            exports.ox_target:removeLocalEntity(LocalPlants[plantId].object, LocalPlants[plantId].targetId)
+        end
+        LocalPlants[plantId] = nil
     end
 end)
 
@@ -156,60 +271,40 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
 
-    print('[ZDRUGS] Resource stopping, closing NUI')  -- DEBUG
+    print('[ZDRUGS] Resource stopping, nettoyage NUI')
+
     if nuiOpen then
-        hideNUI()
+        closeNUI()
+    end
+
+    -- Supprimer toutes les plantes
+    for plantId, plantData in pairs(LocalPlants) do
+        if DoesEntityExist(plantData.object) then
+            DeleteEntity(plantData.object)
+        end
     end
 end)
 
 -- ============================================
--- COMMAND DEBUG
+-- COMMANDE DEBUG
 -- ============================================
 
 RegisterCommand('testnui', function()
-    print('^2========================================^0')
-    print('^2[ZDRUGS] COMMANDE TEST NUI EXÉCUTÉE^0')
-    print('^2========================================^0')
-    print('[ZDRUGS] Envoi du message au NUI...')
+    print('^2[ZDRUGS] Test NUI command^0')
 
     SendNUIMessage({
-        action = 'show',
-        drugLabel = 'TEST CANNABIS',
-        growthPercent = 75,
-        watered = true,
-        fertilized = false,
-        timeText = '05:30'
+        type = 'openMenu',
+        plantId = 9999,
+        plantData = {
+            label = 'Cannabis',
+            growthPercent = 75,
+            watered = true,
+            fertilized = false,
+            readyForHarvest = false,
+            timeText = '05:30'
+        }
     })
 
+    SetNuiFocus(true, true)
     nuiOpen = true
-    print('[ZDRUGS] Message envoyé ! Le NUI devrait s\'afficher.')
-    print('[ZDRUGS] Si rien ne s\'affiche, vérifiez F8 pour des erreurs JavaScript.')
-    print('^2========================================^0')
 end, false)
-
--- Commande alternative plus simple
-RegisterCommand('shownui', function()
-    print('^3[ZDRUGS] Commande shownui - Affichage direct^0')
-    TriggerEvent('zdrugs:client:directShowNUI')
-end, false)
-
--- Event pour affichage direct sans vérification
-RegisterNetEvent('zdrugs:client:directShowNUI', function()
-    print('[ZDRUGS] Direct show NUI - SANS vérification de distance')
-
-    local testPlant = {
-        growthPercent = 85,
-        watered = true,
-        fertilized = false,
-        readyForHarvest = false
-    }
-
-    local testConfig = {
-        label = 'Cannabis',
-        croissance = {
-            duree_totale = 30
-        }
-    }
-
-    showNUI(testPlant, testConfig)
-end)

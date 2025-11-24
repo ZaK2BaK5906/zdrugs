@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZDrugs - Gestion de Plante</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="header-icon">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                <h1>Gestion de Plante</h1>
+                <button class="close-btn" id="closeBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Info de la plante -->
+                <div class="plant-info">
+                    <div class="info-row">
+                        <span class="label">
+                            <i class="fas fa-cannabis"></i> Type:
+                        </span>
+                        <span class="value" id="plantType">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">
+                            <i class="fas fa-chart-line"></i> Croissance:
+                        </span>
+                        <span class="value">
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBar">
+                                    <span id="progressText">0%</span>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">
+                            <i class="fas fa-clock"></i> Temps restant:
+                        </span>
+                        <span class="value timer" id="timeRemaining">--:--</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Statuts -->
+                <div class="status-grid">
+                    <div class="status-card" id="waterStatus">
+                        <div class="status-icon water">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-label">Arrosage</span>
+                            <span class="status-value" id="waterValue">Non</span>
+                        </div>
+                    </div>
+                    <div class="status-card" id="fertStatus">
+                        <div class="status-icon fert">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-label">Engrais</span>
+                            <span class="status-value" id="fertValue">Non</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Actions -->
+                <div class="actions-grid">
+                    <button class="btn btn-water" id="waterBtn">
+                        <i class="fas fa-tint"></i> Arroser
+                    </button>
+                    <button class="btn btn-fert" id="fertBtn">
+                        <i class="fas fa-leaf"></i> Engrais
+                    </button>
+                    <button class="btn btn-harvest" id="harvestBtn">
+                        <i class="fas fa-hand-paper"></i> Récolter
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <p class="info-text">
+                    <i class="fas fa-info-circle"></i>
+                    La plante a besoin d'eau et d'engrais pour grandir
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
