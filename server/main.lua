@@ -224,6 +224,14 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
         return
     end
 
+    -- IMPORTANT: Vérifier si la plante a atteint un palier (met à jour et reset si besoin)
+    -- Cela évite le problème où le joueur essaie d'arroser avant que le thread de croissance n'ait tourné
+    TriggerEvent('zdrugs:server:updatePlantGrowth', plantId)
+
+    -- DEBUG: Afficher l'état de la plante APRÈS la mise à jour
+    print(string.format('[ZDRUGS] Tentative d\'arrosage plante #%d - State: %d, Percent: %.2f%%, Watered: %s, Fertilized: %s',
+        plantId, plant.growthState, plant.growthPercent, tostring(plant.watered), tostring(plant.fertilized)))
+
     -- Vérifier si déjà arrosée
     if plant.watered then
         TriggerClientEvent('ox_lib:notify', source, {
@@ -288,6 +296,13 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
         })
         return
     end
+
+    -- IMPORTANT: Vérifier si la plante a atteint un palier (met à jour et reset si besoin)
+    TriggerEvent('zdrugs:server:updatePlantGrowth', plantId)
+
+    -- DEBUG: Afficher l'état de la plante APRÈS la mise à jour
+    print(string.format('[ZDRUGS] Tentative engrais plante #%d - State: %d, Percent: %.2f%%, Watered: %s, Fertilized: %s',
+        plantId, plant.growthState, plant.growthPercent, tostring(plant.watered), tostring(plant.fertilized)))
 
     -- Vérifier si déjà fertilisée
     if plant.fertilized then

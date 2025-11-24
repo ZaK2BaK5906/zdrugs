@@ -96,7 +96,8 @@ local function updatePlantGrowth(plantId, plant)
             plantId
         })
 
-        print(string.format('[ZDRUGS] Plante #%d → Palier %d atteint (%d%%)', plantId, plant.growthState, targetPercent))
+        print(string.format('[ZDRUGS] Plante #%d → Palier %d atteint (%d%%) - RESET watered=%s fertilized=%s',
+            plantId, plant.growthState, targetPercent, tostring(plant.watered), tostring(plant.fertilized)))
     else
         -- Palier non atteint, mettre à jour le pourcentage
         plant.growthPercent = growthPercent
@@ -110,6 +111,15 @@ local function updatePlantGrowth(plantId, plant)
     -- Sync avec les clients (toujours)
     TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
 end
+
+-- Event pour permettre d'appeler updatePlantGrowth depuis server/main.lua
+RegisterNetEvent('zdrugs:server:updatePlantGrowth', function(plantId)
+    local activePlants = getActivePlants()
+    local plant = activePlants[plantId]
+    if plant and not plant.readyForHarvest then
+        updatePlantGrowth(plantId, plant)
+    end
+end)
 
 -- Thread de mise à jour de croissance (toutes les 5 secondes en mode test)
 CreateThread(function()
