@@ -79,47 +79,28 @@ function openProcessingMenu(drugType)
         return
     end
 
-    local options = {}
+    -- Préparer les données pour le NUI
+    local steps = {}
 
-    -- Créer une option pour chaque étape de traitement
     for i, etape in ipairs(drugConfig.traitement.etapes) do
-        -- Créer la description des items nécessaires
-        local inputText = ''
-        for j, input in ipairs(etape.input) do
-            if j > 1 then
-                inputText = inputText .. ' + '
-            end
-            inputText = inputText .. input.quantite .. 'x ' .. input.item
-        end
-
-        -- Créer la description de l'output
-        local outputText = etape.output.quantite .. 'x ' .. etape.output.item
-
-        local description = string.format(
-            '%s\n\n**Nécessite:** %s\n**Produit:** %s\n**Durée:** %d secondes',
-            etape.description or '',
-            inputText,
-            outputText,
-            etape.temps
-        )
-
-        table.insert(options, {
-            title = etape.nom,
-            description = description,
-            icon = 'flask',
-            onSelect = function()
-                startProcessing(drugType, i)
-            end
+        table.insert(steps, {
+            nom = etape.nom,
+            description = etape.description or '',
+            temps = etape.temps,
+            inputs = etape.input,
+            output = etape.output
         })
     end
 
-    lib.registerContext({
-        id = 'processing_menu_' .. drugType,
-        title = '⚗️ Traitement - ' .. drugConfig.label,
-        options = options
+    -- Ouvrir le NUI
+    SendNUIMessage({
+        type = 'openProcessing',
+        drugType = drugType,
+        drugLabel = drugConfig.label,
+        steps = steps
     })
 
-    lib.showContext('processing_menu_' .. drugType)
+    SetNuiFocus(true, true)
 end
 
 -- ============================================
@@ -208,39 +189,22 @@ function startPackaging(drugType)
 
     local packaging = drugConfig.conditionnement
 
-    -- Créer la description des items nécessaires
-    local inputText = ''
-    for j, input in ipairs(packaging.input) do
-        if j > 1 then
-            inputText = inputText .. ' + '
-        end
-        inputText = inputText .. input.quantite .. 'x ' .. input.item
-    end
+    -- Préparer les données pour le NUI
+    local packagingData = {
+        temps = packaging.temps,
+        inputs = packaging.input,
+        output = packaging.output
+    }
 
-    -- Créer la description de l'output
-    local outputText = packaging.output.quantite .. 'x ' .. packaging.output.item
-
-    -- Confirmation
-    local alert = lib.alertDialog({
-        header = '📦 Conditionnement - ' .. drugConfig.label,
-        content = string.format(
-            '**Nécessite:**\n%s\n\n**Produit:**\n%s\n\n**Durée:** %d secondes',
-            inputText,
-            outputText,
-            packaging.temps
-        ),
-        centered = true,
-        cancel = true,
-        labels = {
-            cancel = 'Annuler',
-            confirm = 'Confirmer'
-        }
+    -- Ouvrir le NUI
+    SendNUIMessage({
+        type = 'openPackaging',
+        drugType = drugType,
+        drugLabel = drugConfig.label,
+        packagingData = packagingData
     })
 
-    if alert == 'confirm' then
-        -- Demander au serveur de vérifier et retirer les items
-        TriggerServerEvent('zdrugs:server:startPackaging', drugType)
-    end
+    SetNuiFocus(true, true)
 end
 
 --- Effectue l'animation et la progress bar de conditionnement

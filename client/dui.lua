@@ -258,6 +258,30 @@ RegisterNUICallback('buyItem', function(data, cb)
     cb('ok')
 end)
 
+--- Callback pour démarrer une étape de traitement
+RegisterNUICallback('processStep', function(data, cb)
+    print('[ZDRUGS] Callback processStep:', data.drugType, 'étape', data.stepIndex)
+
+    closeNUI()
+
+    -- Envoyer au serveur (stepIndex en Lua commence à 1)
+    TriggerServerEvent('zdrugs:server:startProcessing', data.drugType, data.stepIndex + 1)
+
+    cb('ok')
+end)
+
+--- Callback pour démarrer le conditionnement
+RegisterNUICallback('packageDrug', function(data, cb)
+    print('[ZDRUGS] Callback packageDrug:', data.drugType)
+
+    closeNUI()
+
+    -- Envoyer au serveur
+    TriggerServerEvent('zdrugs:server:startPackaging', data.drugType)
+
+    cb('ok')
+end)
+
 -- ============================================
 -- NETTOYAGE
 -- ============================================

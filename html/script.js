@@ -34,6 +34,8 @@ window.addEventListener('message', function(event) {
             console.log('[ZDrugs NUI] Ouverture du menu PLANTE');
             $('#plantMode').show();
             $('#shopMode').hide();
+            $('#processingMode').hide();
+            $('#packagingMode').hide();
             $('#headerIcon').html('<i class="fas fa-seedling"></i>');
             $('#headerTitle').text('Gestion de Plante');
             $('#footerText').html('<i class="fas fa-info-circle"></i> La plante a besoin d\'eau et d\'engrais pour grandir');
@@ -44,10 +46,36 @@ window.addEventListener('message', function(event) {
             console.log('[ZDrugs NUI] Ouverture du menu BOUTIQUE');
             $('#plantMode').hide();
             $('#shopMode').show();
+            $('#processingMode').hide();
+            $('#packagingMode').hide();
             $('#headerIcon').html('<i class="fas fa-shop"></i>');
             $('#headerTitle').text(data.shopData.nom);
             $('#footerText').html('<i class="fas fa-dollar-sign"></i> Cliquez sur un item pour l\'acheter');
             openShopMenu(data.shopIndex, data.shopData);
+            break;
+
+        case 'openProcessing':
+            console.log('[ZDrugs NUI] Ouverture du menu TRAITEMENT');
+            $('#plantMode').hide();
+            $('#shopMode').hide();
+            $('#processingMode').show();
+            $('#packagingMode').hide();
+            $('#headerIcon').html('<i class="fas fa-flask"></i>');
+            $('#headerTitle').text('⚗️ Traitement - ' + data.drugLabel);
+            $('#footerText').html('<i class="fas fa-info-circle"></i> Sélectionnez une étape de traitement');
+            openProcessingMenu(data.drugType, data.drugLabel, data.steps);
+            break;
+
+        case 'openPackaging':
+            console.log('[ZDrugs NUI] Ouverture du menu CONDITIONNEMENT');
+            $('#plantMode').hide();
+            $('#shopMode').hide();
+            $('#processingMode').hide();
+            $('#packagingMode').show();
+            $('#headerIcon').html('<i class="fas fa-box"></i>');
+            $('#headerTitle').text('📦 Conditionnement - ' + data.drugLabel);
+            $('#footerText').html('<i class="fas fa-info-circle"></i> Confirmez pour conditionner');
+            openPackagingMenu(data.drugType, data.drugLabel, data.packagingData);
             break;
 
         case 'updatePlant':
@@ -244,6 +272,146 @@ $('#harvestBtn').click(function() {
     });
     closeMenu();
 });
+
+// ============================================
+// MODE TRAITEMENT (PROCESSING)
+// ============================================
+
+let currentDrugType = null;
+
+function openProcessingMenu(drugType, drugLabel, steps) {
+    currentDrugType = drugType;
+
+    const container = $('#processingSteps');
+    container.empty();
+
+    steps.forEach(function(step, index) {
+        // Créer la liste des inputs
+        let inputsHtml = '';
+        step.inputs.forEach(function(input) {
+            inputsHtml += `<div class="recipe-item">${input.quantite}x ${input.item}</div>`;
+        });
+
+        // Créer la sortie
+        const outputHtml = `<div class="recipe-item output">${step.output.quantite}x ${step.output.item}</div>`;
+
+        const stepHtml = `
+            <div class="processing-step">
+                <div class="step-header">
+                    <div class="step-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-name">${step.nom}</div>
+                        <div class="step-desc">${step.description || ''}</div>
+                        <div class="step-time"><i class="fas fa-clock"></i> ${step.temps}s</div>
+                    </div>
+                </div>
+                <div class="step-recipe">
+                    <div class="recipe-section">
+                        <div class="recipe-label">Nécessite:</div>
+                        ${inputsHtml}
+                    </div>
+                    <div class="recipe-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="recipe-section">
+                        <div class="recipe-label">Produit:</div>
+                        ${outputHtml}
+                    </div>
+                </div>
+                <button class="step-btn" data-step-index="${index}">
+                    <i class="fas fa-play"></i> Commencer
+                </button>
+            </div>
+        `;
+
+        container.append(stepHtml);
+    });
+
+    // Event handler pour les boutons de traitement
+    $('.step-btn').click(function() {
+        const stepIndex = $(this).data('step-index');
+        console.log('[ZDrugs NUI] Démarrage traitement:', currentDrugType, 'étape', stepIndex);
+
+        post('processStep', {
+            drugType: currentDrugType,
+            stepIndex: stepIndex
+        });
+
+        closeMenu();
+    });
+
+    // Afficher le menu
+    $('#app').addClass('active');
+}
+
+// ============================================
+// MODE CONDITIONNEMENT (PACKAGING)
+// ============================================
+
+function openPackagingMenu(drugType, drugLabel, packagingData) {
+    currentDrugType = drugType;
+
+    const container = $('#packagingInfo');
+    container.empty();
+
+    // Créer la liste des inputs
+    let inputsHtml = '';
+    packagingData.inputs.forEach(function(input) {
+        inputsHtml += `<div class="recipe-item">${input.quantite}x ${input.item}</div>`;
+    });
+
+    // Créer la sortie
+    const outputHtml = `<div class="recipe-item output">${packagingData.output.quantite}x ${packagingData.output.item}</div>`;
+
+    const packagingHtml = `
+        <div class="packaging-card">
+            <div class="step-header">
+                <div class="step-icon packaging-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="step-info">
+                    <div class="step-name">Conditionnement</div>
+                    <div class="step-desc">Préparez votre produit pour la vente</div>
+                    <div class="step-time"><i class="fas fa-clock"></i> ${packagingData.temps}s</div>
+                </div>
+            </div>
+            <div class="step-recipe">
+                <div class="recipe-section">
+                    <div class="recipe-label">Nécessite:</div>
+                    ${inputsHtml}
+                </div>
+                <div class="recipe-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="recipe-section">
+                    <div class="recipe-label">Produit:</div>
+                    ${outputHtml}
+                </div>
+            </div>
+            <button class="step-btn packaging-btn">
+                <i class="fas fa-check"></i> Conditionner
+            </button>
+        </div>
+    `;
+
+    container.html(packagingHtml);
+
+    // Event handler pour le bouton de conditionnement
+    $('.packaging-btn').click(function() {
+        console.log('[ZDrugs NUI] Démarrage conditionnement:', currentDrugType);
+
+        post('packageDrug', {
+            drugType: currentDrugType
+        });
+
+        closeMenu();
+    });
+
+    // Afficher le menu
+    $('#app').addClass('active');
+}
 
 // Animation au chargement
 $(document).ready(function() {
