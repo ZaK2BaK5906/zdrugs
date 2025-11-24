@@ -40,10 +40,10 @@ Config.Drogues = {
 
             -- Props visuels pour chaque état (0%, 33%, 66%, 100%)
             props = {
-                "prop_plant_base_01",      -- 0% (graine plantée)
-                "prop_plant_fern_01a",     -- 33%
-                "prop_plant_fern_01b",     -- 66%
-                "prop_plant_fern_02a"      -- 100%
+                "h4_prop_bush_cocaplant_01",  -- 0% (graine plantée)
+                "h4_prop_bush_cocaplant_01",  -- 33%
+                "h4_prop_bush_cocaplant_01",  -- 66%
+                "h4_prop_bush_cocaplant_01"   -- 100%
             },
 
             -- Chaque état nécessite 1x arrosage et 1x engrais
@@ -137,10 +137,10 @@ Config.Drogues = {
             etats = 3,
 
             props = {
-                "prop_weed_01",        -- 0% (graine plantée)
-                "prop_weed_02",        -- 33%
-                "prop_weed_med_01",    -- 66%
-                "prop_weed_lrg_01a"    -- 100%
+                "prop_weed_01",           -- 0% (graine plantée)
+                "prop_weed_01",           -- 33%
+                "prop_weed_01",           -- 66%
+                "prop_weed_01"            -- 100%
             },
 
             besoin_arrosage = true,

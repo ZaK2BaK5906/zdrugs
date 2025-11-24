@@ -63,11 +63,18 @@ local function createPlantProp(plantId, plant)
     local heading = plant.coords.heading or 0.0
 
     -- Créer l'objet
-    local obj = CreateObject(GetHashKey(propModel), coords.x, coords.y, coords.z, false, false, false)
+    local obj = CreateObject(GetHashKey(propModel), coords.x, coords.y, coords.z, true, false, false)
     SetEntityHeading(obj, heading)
     PlaceObjectOnGroundProperly(obj)
     FreezeEntityPosition(obj, true)
     SetEntityAsMissionEntity(obj, true, true)
+
+    -- Attendre que l'objet soit créé
+    local timeout = 0
+    while not DoesEntityExist(obj) and timeout < 100 do
+        Wait(10)
+        timeout = timeout + 1
+    end
 
     -- Stocker dans le cache
     activePlants[plantId] = {
@@ -87,7 +94,7 @@ local function removePlantProp(plantId)
 
     -- Supprimer l'objet
     if DoesEntityExist(plantCache.object) then
-        exports.ox_target:removeEntity(plantCache.object)
+        exports.ox_target:removeLocalEntity(plantCache.object)
         DeleteEntity(plantCache.object)
     end
 
@@ -173,7 +180,8 @@ function setupPlantInteractions(plantId, obj, plant)
         })
     end
 
-    exports.ox_target:addEntity(obj, options)
+    -- Utiliser addLocalEntity pour les objets créés dynamiquement
+    exports.ox_target:addLocalEntity(obj, options)
 end
 
 -- ============================================
