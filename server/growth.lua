@@ -114,10 +114,19 @@ end
 
 -- Event pour permettre d'appeler updatePlantGrowth depuis server/main.lua
 RegisterNetEvent('zdrugs:server:updatePlantGrowth', function(plantId)
+    print(string.format('[ZDRUGS] Event updatePlantGrowth appelé pour plante #%d', plantId))
     local activePlants = getActivePlants()
     local plant = activePlants[plantId]
-    if plant and not plant.readyForHarvest then
-        updatePlantGrowth(plantId, plant)
+    if plant then
+        print(string.format('[ZDRUGS] Plante trouvée - State: %d, ReadyForHarvest: %s, Watered: %s, Fertilized: %s',
+            plant.growthState, tostring(plant.readyForHarvest), tostring(plant.watered), tostring(plant.fertilized)))
+        if not plant.readyForHarvest then
+            updatePlantGrowth(plantId, plant)
+        else
+            print('[ZDRUGS] Plante déjà prête à récolter, pas de mise à jour')
+        end
+    else
+        print('[ZDRUGS] Plante non trouvée dans activePlants!')
     end
 end)
 
