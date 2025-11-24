@@ -13,7 +13,7 @@ Config.Limites = {
 
 -- Items communs
 Config.Items = {
-    eau = "water",                -- Item pour arroser
+    eau = "arrosoir",             -- Item pour arroser
     engrais = "fertilizer",       -- Item pour mettre de l'engrais
     pochon = "plastic_bag",       -- Sachets pour cocaine et weed
     sachets = "small_bags"        -- Sachets pour meth

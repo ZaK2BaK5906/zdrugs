@@ -7,12 +7,12 @@
 -- ITEMS COMMUNS
 -- ============================================
 
-['water'] = {
-    label = 'Eau',
+['arrosoir'] = {
+    label = 'Arrosoir',
     weight = 500,
     stack = true,
     close = true,
-    description = 'De l\'eau pour arroser les plantes'
+    description = 'Arrosoir pour arroser les plantes'
 },
 
 ['fertilizer'] = {

@@ -19,14 +19,16 @@ local function generateDUIHTML(plant, drugConfig)
     local waterIcon = plant.watered and '✅' or '❌'
     local fertIcon = plant.fertilized and '✅' or '❌'
 
-    -- Calculer le temps restant
-    local currentTime = os.time()
-    local timeSincePlanted = currentTime - plant.plantedAt
+    -- Calculer le temps restant (utiliser GetGameTimer pour le temps actuel côté client)
+    -- Note: plant.plantedAt et plant.lastUpdate sont des timestamps Unix serveur
+    -- On utilise une estimation basée sur le pourcentage de croissance
     local totalDuration = drugConfig.croissance.duree_totale
-    local timeRemaining = math.max(0, totalDuration - timeSincePlanted)
+    local currentPercent = plant.growthPercent or 0
+    local remainingPercent = 100 - currentPercent
+    local timeRemaining = (totalDuration * remainingPercent) / 100
 
     local minutes = math.floor(timeRemaining / 60)
-    local seconds = timeRemaining % 60
+    local seconds = math.floor(timeRemaining % 60)
 
     local nextStepText = plant.readyForHarvest and 'Prête à récolter !' or string.format('%d min %d sec', minutes, seconds)
 
@@ -316,14 +318,14 @@ RegisterNetEvent('zdrugs:client:showPlantMenu', function(plantId)
         local waterStatus = plant.watered and '✅ Oui' or '❌ Non'
         local fertStatus = plant.fertilized and '✅ Oui' or '❌ Non'
 
-        -- Calculer le temps restant
-        local currentTime = os.time()
-        local timeSincePlanted = currentTime - plant.plantedAt
+        -- Calculer le temps restant basé sur le pourcentage de croissance
         local totalDuration = drugConfig.croissance.duree_totale
-        local timeRemaining = math.max(0, totalDuration - timeSincePlanted)
+        local currentPercent = plant.growthPercent or 0
+        local remainingPercent = 100 - currentPercent
+        local timeRemaining = (totalDuration * remainingPercent) / 100
 
         local minutes = math.floor(timeRemaining / 60)
-        local seconds = timeRemaining % 60
+        local seconds = math.floor(timeRemaining % 60)
         local nextStepText = plant.readyForHarvest and '✅ Prête à récolter !' or string.format('⏱️ %d min %d sec', minutes, seconds)
 
         lib.alertDialog({
