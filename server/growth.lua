@@ -2,7 +2,10 @@
 -- SERVER GROWTH - Système de croissance et nettoyage
 -- ============================================
 
-local activePlants = exports.zdrugs:GetActivePlants()
+-- Fonction pour récupérer activePlants dynamiquement
+local function getActivePlants()
+    return exports.zdrugs:GetActivePlants()
+end
 
 -- ============================================
 -- SYSTÈME DE CROISSANCE
@@ -115,11 +118,12 @@ local function updatePlantGrowth(plantId, plant)
     end
 end
 
--- Thread de mise à jour de croissance (toutes les 30 secondes)
+-- Thread de mise à jour de croissance (toutes les 5 secondes en mode test)
 CreateThread(function()
     while true do
-        Wait(30000)  -- 30 secondes
+        Wait(5000)  -- 5 secondes (MODE TEST!)
 
+        local activePlants = getActivePlants()
         for plantId, plant in pairs(activePlants) do
             if not plant.readyForHarvest then
                 updatePlantGrowth(plantId, plant)
@@ -136,6 +140,7 @@ end)
 local function cleanupOldPlants()
     local currentTime = os.time()
     local maxAge = Config.Limites.suppression_auto_apres
+    local activePlants = getActivePlants()
 
     for plantId, plant in pairs(activePlants) do
         local age = currentTime - plant.plantedAt

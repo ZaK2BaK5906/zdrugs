@@ -35,8 +35,8 @@ Config.Drogues = {
 
         -- Configuration de la croissance
         croissance = {
-            duree_totale = 1800,  -- 30 minutes (en secondes)
-            etats = 3,            -- 3 états de croissance (33%, 66%, 100%)
+            duree_totale = 30,  -- 30 SECONDES (MODE TEST!)
+            etats = 3,          -- 3 états de croissance (33%, 66%, 100%)
 
             -- Props visuels pour chaque état (0%, 33%, 66%, 100%)
             props = {
@@ -80,7 +80,7 @@ Config.Drogues = {
                         {item = "feuille_coca", quantite = 10}
                     },
                     output = {item = "pate_coca", quantite = 1},
-                    temps = 120,  -- 2 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@coc@coc_unpack_cut@",
                         anim = "fullcut_cycle_v1_cokecutter"
@@ -96,7 +96,7 @@ Config.Drogues = {
                         {item = "acide_sulfurique", quantite = 1}
                     },
                     output = {item = "cocaine_pure", quantite = 1},
-                    temps = 180,  -- 3 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@coc@coc_unpack_cut@",
                         anim = "fullcut_cycle_v6_cokecutter"
@@ -116,7 +116,7 @@ Config.Drogues = {
                 {item = "pochon", quantite = 10}
             },
             output = {item = "pochon_cocaine", quantite = 10},
-            temps = 60,  -- 1 minute
+            temps = 10,  -- 10 secondes (MODE TEST!)
             animation = {
                 dict = "anim@amb@business@coc@coc_packing_hi@",
                 anim = "full_cycle_v1_pressoperator"
@@ -133,7 +133,7 @@ Config.Drogues = {
         graine = "graine_weed",
 
         croissance = {
-            duree_totale = 1800,  -- 30 minutes
+            duree_totale = 30,  -- 30 SECONDES (MODE TEST!)
             etats = 3,
 
             props = {
@@ -174,7 +174,7 @@ Config.Drogues = {
                         {item = "tete_weed", quantite = 15}
                     },
                     output = {item = "weed_sechee", quantite = 5},
-                    temps = 300,  -- 5 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@weed@weed_sorting_seated@",
                         anim = "sorter_right_sort_v3_sorter02"
@@ -189,7 +189,7 @@ Config.Drogues = {
                         {item = "weed_sechee", quantite = 3}
                     },
                     output = {item = "weed_trimmed", quantite = 1},
-                    temps = 120,  -- 2 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@weed@weed_sorting_seated@",
                         anim = "sorter_right_sort_v3_sorter02"
@@ -208,7 +208,7 @@ Config.Drogues = {
                 {item = "pochon", quantite = 5}
             },
             output = {item = "pochon_weed", quantite = 5},
-            temps = 45,
+            temps = 10,  -- 10 secondes (MODE TEST!)
             animation = {
                 dict = "anim@amb@business@weed@weed_packing_hi@",
                 anim = "pack_full_cycle_v3_pressoperator"
@@ -243,7 +243,7 @@ Config.Drogues = {
                         {item = "acide_chlorhydrique", quantite = 2}
                     },
                     output = {item = "base_meth", quantite = 1},
-                    temps = 600,  -- 10 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@meth@meth_monitoring_cooking@cooking@",
                         anim = "chemical_pour_long_v3_cooker"
@@ -259,7 +259,7 @@ Config.Drogues = {
                         {item = "acetone", quantite = 1}
                     },
                     output = {item = "meth_pure", quantite = 1},
-                    temps = 480,  -- 8 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@meth@meth_monitoring_cooking@cooking@",
                         anim = "chemical_pour_long_v3_cooker"
@@ -274,7 +274,7 @@ Config.Drogues = {
                         {item = "meth_pure", quantite = 1}
                     },
                     output = {item = "cristaux_meth", quantite = 3},
-                    temps = 300,  -- 5 minutes
+                    temps = 10,  -- 10 secondes (MODE TEST!)
                     animation = {
                         dict = "anim@amb@business@meth@meth_monitoring_cooking@cooking@",
                         anim = "chemical_pour_short_v1_cooker"
