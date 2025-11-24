@@ -249,7 +249,12 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
 
     -- Mettre à jour la plante
     plant.watered = true
-    MySQL.update('UPDATE zdrugs_plants SET watered = 1 WHERE id = ?', {plantId})
+    plant.lastUpdate = os.time()  -- Démarrer/mettre à jour le compteur de croissance
+
+    MySQL.update('UPDATE zdrugs_plants SET watered = 1, last_update = ? WHERE id = ?', {
+        os.time(),
+        plantId
+    })
 
     -- Logger l'action
     logAction(xPlayer.identifier, 'water', plant.drugType, {plantId = plantId})
@@ -309,7 +314,12 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
 
     -- Mettre à jour la plante
     plant.fertilized = true
-    MySQL.update('UPDATE zdrugs_plants SET fertilized = 1 WHERE id = ?', {plantId})
+    plant.lastUpdate = os.time()  -- Démarrer/mettre à jour le compteur de croissance
+
+    MySQL.update('UPDATE zdrugs_plants SET fertilized = 1, last_update = ? WHERE id = ?', {
+        os.time(),
+        plantId
+    })
 
     -- Logger l'action
     logAction(xPlayer.identifier, 'fertilize', plant.drugType, {plantId = plantId})

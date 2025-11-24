@@ -11,117 +11,104 @@ end
 -- SYSTÈME DE CROISSANCE
 -- ============================================
 
---- Calcule le pourcentage de croissance d'une plante
+--- Calcule le pourcentage de croissance d'une plante (SYSTÈME PAR PALIERS)
 ---@param plant table Données de la plante
 ---@param drugConfig table Configuration de la drogue
----@return number, number Pourcentage total, état actuel (0-3)
+---@return number Pourcentage actuel
 local function calculateGrowth(plant, drugConfig)
+    -- Paliers: 0%, 33%, 66%, 100%
+    -- growthState: 0 (0%), 1 (33%), 2 (66%), 3 (100%)
+
+    local stageBases = {
+        [0] = 0,    -- État 0 → 0%
+        [1] = 33,   -- État 1 → 33%
+        [2] = 66,   -- État 2 → 66%
+        [3] = 100   -- État 3 → 100%
+    }
+
+    -- Si la plante n'a pas les 2 items (eau + engrais), elle ne grandit pas
+    if not plant.watered or not plant.fertilized then
+        -- Retourner le pourcentage du palier actuel
+        return stageBases[plant.growthState] or 0
+    end
+
+    -- La plante a les 2 items, elle peut grandir vers le palier suivant
     local currentTime = os.time()
-    local timeSincePlanted = currentTime - plant.plantedAt
+    local timeGrowing = currentTime - plant.lastUpdate  -- Temps depuis l'ajout des 2 items
     local totalDuration = drugConfig.croissance.duree_totale
+    local stageDuration = totalDuration / 3  -- Chaque palier prend 1/3 du temps total
 
-    -- Calculer le pourcentage de croissance brut
-    local rawPercent = (timeSincePlanted / totalDuration) * 100
-    rawPercent = math.min(rawPercent, 100)  -- Max 100%
+    -- Calculer le pourcentage dans le palier actuel (0 à 33)
+    local percentInStage = (timeGrowing / stageDuration) * 33
+    percentInStage = math.min(percentInStage, 33)  -- Max 33% par palier
 
-    -- Déterminer l'état actuel (0, 1, 2, 3)
-    local state = 0
-    if rawPercent >= 100 then
-        state = 3  -- 100% - prêt à récolter
-    elseif rawPercent >= 66 then
-        state = 2  -- 66-99%
-    elseif rawPercent >= 33 then
-        state = 1  -- 33-65%
-    else
-        state = 0  -- 0-32%
-    end
+    -- Pourcentage total = base du palier + progression dans le palier
+    local totalPercent = stageBases[plant.growthState] + percentInStage
 
-    return rawPercent, state
+    return totalPercent
 end
 
---- Vérifie si une plante peut passer à l'état suivant
----@param plant table Données de la plante
----@param newState number Nouvel état
----@return boolean
-local function canGrowToNextState(plant, newState)
-    -- Pour passer à un nouvel état, il faut avoir été arrosé ET fertilisé
-    if newState > plant.growthState then
-        return plant.watered and plant.fertilized
-    end
-    return true
-end
-
---- Met à jour la croissance d'une plante
+--- Met à jour la croissance d'une plante (SYSTÈME PAR PALIERS)
 ---@param plantId number ID de la plante
 ---@param plant table Données de la plante
 local function updatePlantGrowth(plantId, plant)
     local drugConfig = Config.Drogues[plant.drugType]
     if not drugConfig then return end
 
-    local growthPercent, newState = calculateGrowth(plant, drugConfig)
+    -- Si la plante est déjà à 100%, ne rien faire
+    if plant.growthState >= 3 then
+        return
+    end
 
-    -- Si le nouvel état est différent, vérifier les conditions
-    if newState > plant.growthState then
-        -- Peut-on passer au nouvel état ?
-        if canGrowToNextState(plant, newState) then
-            -- Passer au nouvel état
-            plant.growthState = newState
-            plant.growthPercent = growthPercent
+    -- Calculer le pourcentage actuel
+    local growthPercent = calculateGrowth(plant, drugConfig)
 
-            -- Réinitialiser arrosage et engrais pour le prochain état
-            plant.watered = false
-            plant.fertilized = false
+    -- Vérifier si la plante a atteint le palier suivant (33, 66, ou 100)
+    local nextStagePercent = {
+        [0] = 33,   -- De 0 → 33%
+        [1] = 66,   -- De 33 → 66%
+        [2] = 100   -- De 66 → 100%
+    }
 
-            -- Si état 3 (100%), marquer comme prêt à récolter
-            if newState >= 3 then
-                plant.readyForHarvest = true
-            end
+    local targetPercent = nextStagePercent[plant.growthState]
 
-            -- Sauvegarder en DB
-            MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ?, last_update = ? WHERE id = ?', {
-                newState,
-                growthPercent,
-                plant.readyForHarvest and 1 or 0,
-                os.time(),
-                plantId
-            })
+    if growthPercent >= targetPercent and plant.watered and plant.fertilized then
+        -- PALIER ATTEINT! Passer au stade suivant
+        plant.growthState = plant.growthState + 1
+        plant.growthPercent = targetPercent
 
-            -- Sync avec les clients
-            TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
-        else
-            -- Conditions non remplies, rester à l'état actuel
-            -- Mais mettre à jour le pourcentage dans la limite de l'état actuel
-            local maxPercentForState = {
-                [0] = 32.99,
-                [1] = 65.99,
-                [2] = 99.99,
-                [3] = 100
-            }
-            plant.growthPercent = math.min(growthPercent, maxPercentForState[plant.growthState])
-
-            MySQL.update('UPDATE zdrugs_plants SET growth_percent = ?, last_update = ? WHERE id = ?', {
-                plant.growthPercent,
-                os.time(),
-                plantId
-            })
-
-            -- Sync avec les clients même si on ne change pas d'état
-            TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
-        end
-    else
-        -- Même état, juste mettre à jour le pourcentage
-        plant.growthPercent = growthPercent
+        -- Réinitialiser eau + engrais pour le prochain palier
+        plant.watered = false
+        plant.fertilized = false
         plant.lastUpdate = os.time()
 
-        MySQL.update('UPDATE zdrugs_plants SET growth_percent = ?, last_update = ? WHERE id = ?', {
-            growthPercent,
+        -- Si on atteint 100%, marquer comme prêt à récolter
+        if plant.growthState >= 3 then
+            plant.readyForHarvest = true
+        end
+
+        -- Sauvegarder en DB
+        MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ?, last_update = ? WHERE id = ?', {
+            plant.growthState,
+            plant.growthPercent,
+            plant.readyForHarvest and 1 or 0,
             os.time(),
             plantId
         })
 
-        -- Sync avec les clients pour la mise à jour du pourcentage
-        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
+        print(string.format('[ZDRUGS] Plante #%d → Palier %d atteint (%d%%)', plantId, plant.growthState, targetPercent))
+    else
+        -- Palier non atteint, mettre à jour le pourcentage
+        plant.growthPercent = growthPercent
+
+        MySQL.update('UPDATE zdrugs_plants SET growth_percent = ? WHERE id = ?', {
+            growthPercent,
+            plantId
+        })
     end
+
+    -- Sync avec les clients (toujours)
+    TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
 end
 
 -- Thread de mise à jour de croissance (toutes les 5 secondes en mode test)
