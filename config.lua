@@ -330,6 +330,40 @@ Config.Animations = {
     engrais = {
         dict = "amb@world_human_gardener_plant@male@base",
         anim = "base"
+    },
+    recolte = {
+        dict = "amb@prop_human_bum_bin@idle_b",
+        anim = "idle_d"
+    }
+}
+
+-- ============================================
+-- BOUTIQUES DE MATIÈRES PREMIÈRES
+-- ============================================
+
+Config.Boutiques = {
+    {
+        nom = "Vendeur de Graines",
+        coords = vector3(100.0, -100.0, 30.0),  -- TODO: Changer les coordonnées
+        heading = 90.0,
+        ped = "a_m_m_farmer_01",
+        blip = {
+            enabled = true,
+            sprite = 496,
+            color = 2,
+            scale = 0.8,
+            label = "Matières Premières"
+        },
+        items = {
+            {item = "graine_coca", label = "Graine de Coca", prix = 50},
+            {item = "graine_weed", label = "Graine de Cannabis", prix = 50},
+            {item = "arrosoir", label = "Arrosoir", prix = 50},
+            {item = "fertilizer", label = "Engrais", prix = 50},
+            {item = "pseudoephedrine", label = "Pseudoéphédrine", prix = 50},
+            {item = "acide_chlorhydrique", label = "Acide Chlorhydrique", prix = 50},
+            {item = "acetone", label = "Acétone", prix = 50},
+            {item = "acide_sulfurique", label = "Acide Sulfurique", prix = 50}
+        }
     }
 }
 
@@ -347,5 +381,7 @@ Config.Messages = {
     plante_pas_prete = "La plante n'est pas prête à être récoltée",
     traitement_success = "Traitement terminé: %sx %s",
     conditionnement_success = "Conditionnement terminé: %sx %s",
-    plante_supprimee = "Plante supprimée (trop ancienne)"
+    plante_supprimee = "Plante supprimée (trop ancienne)",
+    achat_success = "Vous avez acheté %sx %s pour $%s",
+    pas_assez_argent = "Vous n'avez pas assez d'argent ($%s requis)"
 }
