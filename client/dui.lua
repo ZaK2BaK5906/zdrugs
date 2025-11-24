@@ -211,60 +211,6 @@ RegisterNUICallback('harvestPlant', function(data, cb)
 end)
 
 -- ============================================
--- SYNCHRONISATION
--- ============================================
-
---- Sync toutes les plantes
-RegisterNetEvent('zdrugs:client:syncAllPlants', function(plants)
-    -- Supprimer toutes les plantes locales
-    for plantId, plantData in pairs(LocalPlants) do
-        if DoesEntityExist(plantData.object) then
-            DeleteEntity(plantData.object)
-        end
-        if plantData.targetId then
-            exports.ox_target:removeLocalEntity(plantData.object, plantData.targetId)
-        end
-    end
-
-    LocalPlants = {}
-
-    -- Créer les nouvelles plantes
-    for plantId, plant in pairs(plants) do
-        spawnPlant(plantId, plant)
-    end
-end)
-
---- Sync une seule plante
-RegisterNetEvent('zdrugs:client:syncPlant', function(plantId, plant)
-    if LocalPlants[plantId] then
-        -- Mettre à jour la plante existante
-        LocalPlants[plantId].watered = plant.watered
-        LocalPlants[plantId].fertilized = plant.fertilized
-        LocalPlants[plantId].growthPercent = plant.growthPercent
-        LocalPlants[plantId].growthState = plant.growthState
-        LocalPlants[plantId].readyForHarvest = plant.readyForHarvest
-
-        -- Mettre à jour le prop si l'état de croissance a changé
-        if plant.growthState ~= LocalPlants[plantId].lastGrowthState then
-            updatePlantProp(plantId, plant)
-        end
-    end
-end)
-
---- Supprimer une plante
-RegisterNetEvent('zdrugs:client:removePlant', function(plantId)
-    if LocalPlants[plantId] then
-        if DoesEntityExist(LocalPlants[plantId].object) then
-            DeleteEntity(LocalPlants[plantId].object)
-        end
-        if LocalPlants[plantId].targetId then
-            exports.ox_target:removeLocalEntity(LocalPlants[plantId].object, LocalPlants[plantId].targetId)
-        end
-        LocalPlants[plantId] = nil
-    end
-end)
-
--- ============================================
 -- NETTOYAGE
 -- ============================================
 
@@ -275,13 +221,6 @@ AddEventHandler('onResourceStop', function(resourceName)
 
     if nuiOpen then
         closeNUI()
-    end
-
-    -- Supprimer toutes les plantes
-    for plantId, plantData in pairs(LocalPlants) do
-        if DoesEntityExist(plantData.object) then
-            DeleteEntity(plantData.object)
-        end
     end
 end)
 
