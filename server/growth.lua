@@ -72,6 +72,10 @@ local function updatePlantGrowth(plantId, plant)
 
     local targetPercent = nextStagePercent[plant.growthState]
 
+    print(string.format('[ZDRUGS] updatePlantGrowth #%d: growthPercent=%.2f, targetPercent=%d, watered=%s, fertilized=%s, condition=%s',
+        plantId, growthPercent, targetPercent, tostring(plant.watered), tostring(plant.fertilized),
+        tostring(growthPercent >= targetPercent and plant.watered and plant.fertilized)))
+
     if growthPercent >= targetPercent and plant.watered and plant.fertilized then
         -- PALIER ATTEINT! Passer au stade suivant
         plant.growthState = plant.growthState + 1
