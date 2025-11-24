@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>TEST</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+        #test {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: red;
+            padding: 50px;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            display: none;
+            z-index: 99999;
+        }
+        #test.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="test">TEST NUI</div>
+
+    <script>
+        console.log('===== TEST NUI LOADED =====');
+
+        window.addEventListener('message', function(event) {
+            console.log('===== TEST NUI MESSAGE:', event.data);
+
+            if (event.data.action === 'show') {
+                console.log('===== SHOWING TEST NUI =====');
+                document.getElementById('test').classList.add('show');
+            }
+        });
+
+        console.log('===== TEST NUI READY =====');
+    </script>
+</body>
+</html>

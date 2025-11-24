@@ -26,10 +26,11 @@ server_scripts {
     'server/processing.lua'
 }
 
-ui_page 'html/dui.html'
+ui_page 'html/test.html'
 
 files {
-    'html/dui.html'
+    'html/dui.html',
+    'html/test.html'
 }
 
 dependencies {
