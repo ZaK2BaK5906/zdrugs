@@ -324,8 +324,8 @@ Config.Animations = {
         anim = "base"
     },
     arroser = {
-        dict = "weapon@w_sp@jerrycan",
-        anim = "fire"
+        dict = "amb@world_human_gardener_plant@male@base",
+        anim = "base"
     },
     engrais = {
         dict = "amb@world_human_gardener_plant@male@base",

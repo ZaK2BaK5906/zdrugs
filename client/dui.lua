@@ -1,311 +1,228 @@
 -- ============================================
--- CLIENT DUI - Interface 3D pour l'état des plantes
+-- CLIENT DUI - Interface 3D optimisée pour l'état des plantes
 -- ============================================
 
-local activeDUI = nil  -- DUI actuellement affichée
-local duiObject = nil  -- Objet 3D pour afficher le DUI
-local duiTexture = nil -- Texture DUI
+local activeDUIs = {}  -- Cache des DUIs actifs {plantId = {dui, handle, object, txd}}
 
 -- ============================================
--- FONCTIONS DUI
+-- GÉNÉRATION DU HTML POUR LE DUI
 -- ============================================
 
---- Crée le HTML pour le DUI
+--- Génère le HTML optimisé pour le DUI
 ---@param plant table Données de la plante
 ---@param drugConfig table Configuration de la drogue
 ---@return string HTML content
-local function generateDUIHTML(plant, drugConfig)
+local function generateHTML(plant, drugConfig)
     local growthPercent = math.floor(plant.growthPercent or 0)
     local waterIcon = plant.watered and '✅' or '❌'
     local fertIcon = plant.fertilized and '✅' or '❌'
 
-    -- Calculer le temps restant (utiliser GetGameTimer pour le temps actuel côté client)
-    -- Note: plant.plantedAt et plant.lastUpdate sont des timestamps Unix serveur
-    -- On utilise une estimation basée sur le pourcentage de croissance
+    -- Calcul du temps restant
     local totalDuration = drugConfig.croissance.duree_totale
-    local currentPercent = plant.growthPercent or 0
-    local remainingPercent = 100 - currentPercent
+    local remainingPercent = 100 - growthPercent
     local timeRemaining = (totalDuration * remainingPercent) / 100
-
     local minutes = math.floor(timeRemaining / 60)
     local seconds = math.floor(timeRemaining % 60)
+    local timeText = plant.readyForHarvest and 'PRÊT !' or string.format('%02d:%02d', minutes, seconds)
 
-    local nextStepText = plant.readyForHarvest and 'Prête à récolter !' or string.format('%d min %d sec', minutes, seconds)
+    -- Couleur de la barre de progression
+    local barColor = growthPercent >= 100 and '#4ade80' or growthPercent >= 66 and '#fbbf24' or growthPercent >= 33 and '#fb923c' or '#f87171'
 
-    local html = [[
+    return string.format([[
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%%, #0f172a 100%%);
+            color: white;
             width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-
         .container {
-            background: rgba(30, 30, 50, 0.95);
-            border: 2px solid #4ecca3;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            width: 400px;
-            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.95);
+            border: 2px solid #4ade80;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
         }
-
         .header {
             text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #4ecca3;
-            text-shadow: 0 2px 10px rgba(78, 204, 163, 0.5);
+            font-size: 20px;
+            font-weight: 700;
+            color: #4ade80;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
-        .divider {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #4ecca3, transparent);
-            margin: 15px 0;
+        .progress-container {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            height: 30px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        .info-row {
+        .progress-bar {
+            height: 100%%;
+            background: %s;
+            width: %d%%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            transition: width 0.3s ease;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-label {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+        .stat-value {
             font-size: 18px;
+            font-weight: 700;
         }
-
-        .info-label {
-            color: #b8b8b8;
-            font-weight: 500;
-        }
-
-        .info-value {
-            color: #ffffff;
-            font-weight: bold;
-        }
-
-        .growth-bar-container {
-            width: 100%;
-            height: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 15px 0;
-            border: 2px solid #4ecca3;
-        }
-
-        .growth-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4ecca3, #2ecc71);
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .status-icon {
-            font-size: 24px;
-        }
-
-        .next-step {
+        .timer {
+            background: linear-gradient(135deg, #4ade80 0%%, #22c55e 100%%);
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(78, 204, 163, 0.1);
-            border-radius: 10px;
-            border: 1px solid #4ecca3;
-        }
-
-        .next-step-label {
-            color: #4ecca3;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .next-step-value {
-            color: #ffffff;
+            font-weight: 700;
             font-size: 18px;
-            font-weight: bold;
+            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">🌱 État de la Plante</div>
-        <div class="divider"></div>
-
-        <div class="info-row">
-            <span class="info-label">Type:</span>
-            <span class="info-value">]] .. drugConfig.label .. [[</span>
+        <div class="header">🌱 %s</div>
+        <div class="progress-container">
+            <div class="progress-bar">%d%%%%</div>
         </div>
-
-        <div class="growth-bar-container">
-            <div class="growth-bar" style="width: ]] .. growthPercent .. [[%">
-                ]] .. growthPercent .. [[%
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">💧 Arrosage</span>
+                <span class="stat-value">%s</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">🌱 Engrais</span>
+                <span class="stat-value">%s</span>
             </div>
         </div>
-
-        <div class="info-row">
-            <span class="info-label">Arrosage:</span>
-            <span class="status-icon">]] .. waterIcon .. [[</span>
-        </div>
-
-        <div class="info-row">
-            <span class="info-label">Engrais:</span>
-            <span class="status-icon">]] .. fertIcon .. [[</span>
-        </div>
-
-        <div class="next-step">
-            <div class="next-step-label">Prochaine étape dans:</div>
-            <div class="next-step-value">]] .. nextStepText .. [[</div>
-        </div>
+        <div class="timer">⏱️ %s</div>
     </div>
 </body>
 </html>
-    ]]
-
-    return html
+    ]], barColor, growthPercent, drugConfig.label, growthPercent, waterIcon, fertIcon, timeText)
 end
 
---- Affiche le DUI pour une plante
+-- ============================================
+-- GESTION DU DUI
+-- ============================================
+
+--- Crée et affiche un DUI pour une plante
 ---@param plantId number ID de la plante
-RegisterNetEvent('zdrugs:client:showDUI', function(plantId)
-    if not Config.DUI.enabled then
-        -- Mode fallback avec notification simple
-        lib.callback('zdrugs:getPlantData', false, function(plant)
-            if not plant then return end
-
-            local drugConfig = Config.Drogues[plant.drugType]
-            if not drugConfig then return end
-
-            local growthPercent = math.floor(plant.growthPercent or 0)
-            local waterStatus = plant.watered and 'Oui' or 'Non'
-            local fertStatus = plant.fertilized and 'Oui' or 'Non'
-
-            lib.notify({
-                type = 'info',
-                title = 'État de la plante',
-                description = string.format(
-                    'Type: %s\nCroissance: %s%%\nArrosage: %s\nEngrais: %s',
-                    drugConfig.label,
-                    growthPercent,
-                    waterStatus,
-                    fertStatus
-                ),
-                duration = 5000
-            })
-        end, plantId)
-        return
+---@param plant table Données de la plante
+local function createDUI(plantId, plant)
+    -- Nettoyer le DUI existant si présent
+    if activeDUIs[plantId] then
+        destroyDUI(plantId)
     end
 
-    -- Fermer le DUI précédent si existant
-    if activeDUI then
-        hideDUI()
+    local drugConfig = Config.Drogues[plant.drugType]
+    if not drugConfig then return end
+
+    -- Générer le HTML
+    local html = generateHTML(plant, drugConfig)
+
+    -- Créer le DUI (512x512 pour bonne qualité)
+    local dui = CreateDui(html, 512, 512)
+    local handle = GetDuiHandle(dui)
+
+    -- Créer le runtime TXD
+    local txd = CreateRuntimeTxd('zdrugs_dui_' .. plantId)
+    local txn = CreateRuntimeTextureFromDuiHandle(txd, 'dui_texture', handle)
+
+    -- Créer un petit panneau 3D pour afficher le DUI
+    local plantCoords = vector3(plant.coords.x, plant.coords.y, plant.coords.z)
+    local displayCoords = plantCoords + vector3(0, 0, 1.5)  -- 1.5m au-dessus de la plante
+
+    -- Créer un objet invisible pour le panneau (on dessine directement avec DrawSprite)
+    -- Pas besoin d'objet physique, on va juste draw le DUI dans l'espace 3D
+
+    activeDUIs[plantId] = {
+        dui = dui,
+        handle = handle,
+        txd = txd,
+        txn = txn,
+        coords = displayCoords,
+        plantData = plant
+    }
+
+    return true
+end
+
+--- Détruit un DUI
+---@param plantId number ID de la plante
+function destroyDUI(plantId)
+    local duiData = activeDUIs[plantId]
+    if not duiData then return end
+
+    -- Détruire le DUI
+    if duiData.dui then
+        DestroyDui(duiData.dui)
     end
 
-    -- Récupérer les données de la plante
-    lib.callback('zdrugs:getPlantData', false, function(plant)
-        if not plant then return end
+    activeDUIs[plantId] = nil
+end
 
-        local drugConfig = Config.Drogues[plant.drugType]
-        if not drugConfig then return end
+--- Met à jour le contenu d'un DUI existant
+---@param plantId number ID de la plante
+---@param plant table Nouvelles données de la plante
+local function updateDUI(plantId, plant)
+    local duiData = activeDUIs[plantId]
+    if not duiData then return end
 
-        -- Générer le HTML
-        local html = generateDUIHTML(plant, drugConfig)
+    local drugConfig = Config.Drogues[plant.drugType]
+    if not drugConfig then return end
 
-        -- Créer le DUI
-        local duiUrl = 'https://cfx-nui-' .. GetCurrentResourceName() .. '/dui.html'
-        duiTexture = CreateDui(html, Config.DUI.width, Config.DUI.height)
-        local duiHandle = GetDuiHandle(duiTexture)
+    -- Générer le nouveau HTML
+    local html = generateHTML(plant, drugConfig)
 
-        -- Créer un objet invisible pour afficher le DUI
-        local playerPed = PlayerPedId()
-        local playerCoords = GetEntityCoords(playerPed)
-        local forwardVector = GetEntityForwardVector(playerPed)
-        local duiCoords = playerCoords + (forwardVector * 2.0) + vector3(0, 0, 1.0)
+    -- Mettre à jour le DUI avec SetDuiUrl en utilisant data URL
+    SetDuiUrl(duiData.dui, 'data:text/html,' .. html)
 
-        -- Utiliser un prop invisible
-        local propModel = 'prop_cs_tablet_01'
-        RequestModel(GetHashKey(propModel))
-        while not HasModelLoaded(GetHashKey(propModel)) do
-            Wait(10)
-        end
-
-        duiObject = CreateObject(GetHashKey(propModel), duiCoords.x, duiCoords.y, duiCoords.z, false, false, false)
-        SetEntityAlpha(duiObject, 0, false)  -- Invisible
-        FreezeEntityPosition(duiObject, true)
-
-        -- Appliquer la texture DUI (note: ceci est une simplification, GTA V ne supporte pas directement DUI sur objets)
-        -- Dans une implémentation réelle, vous devriez utiliser un NUI plein écran ou un système de scaleform
-
-        activeDUI = {
-            texture = duiTexture,
-            object = duiObject,
-            plantId = plantId
-        }
-
-        -- Auto-fermer après 10 secondes
-        SetTimeout(10000, function()
-            hideDUI()
-        end)
-
-        lib.notify({
-            type = 'success',
-            description = 'Appuyez sur [X] pour fermer'
-        })
-
-        -- Thread pour fermer avec X
-        CreateThread(function()
-            while activeDUI do
-                Wait(0)
-                if IsControlJustPressed(0, 73) then  -- X
-                    hideDUI()
-                    break
-                end
-            end
-        end)
-    end, plantId)
-end)
-
---- Cache le DUI
-function hideDUI()
-    if not activeDUI then return end
-
-    if activeDUI.texture then
-        DestroyDui(activeDUI.texture)
-    end
-
-    if activeDUI.object and DoesEntityExist(activeDUI.object) then
-        DeleteEntity(activeDUI.object)
-    end
-
-    activeDUI = nil
-    duiObject = nil
-    duiTexture = nil
+    duiData.plantData = plant
 end
 
 -- ============================================
--- ALTERNATIVE: MENU OX_LIB (Plus simple et fiable)
+-- AFFICHAGE DU DUI (VIA MENU OX_LIB)
 -- ============================================
 
---- Affiche l'état de la plante via un menu ox_lib
+--- Affiche l'état de la plante via un menu ox_lib (méthode simple et fiable)
 ---@param plantId number ID de la plante
 RegisterNetEvent('zdrugs:client:showPlantMenu', function(plantId)
     lib.callback('zdrugs:getPlantData', false, function(plant)
@@ -318,21 +235,19 @@ RegisterNetEvent('zdrugs:client:showPlantMenu', function(plantId)
         local waterStatus = plant.watered and '✅ Oui' or '❌ Non'
         local fertStatus = plant.fertilized and '✅ Oui' or '❌ Non'
 
-        -- Calculer le temps restant basé sur le pourcentage de croissance
+        -- Calculer le temps restant
         local totalDuration = drugConfig.croissance.duree_totale
-        local currentPercent = plant.growthPercent or 0
-        local remainingPercent = 100 - currentPercent
+        local remainingPercent = 100 - growthPercent
         local timeRemaining = (totalDuration * remainingPercent) / 100
-
         local minutes = math.floor(timeRemaining / 60)
         local seconds = math.floor(timeRemaining % 60)
-        local nextStepText = plant.readyForHarvest and '✅ Prête à récolter !' or string.format('⏱️ %d min %d sec', minutes, seconds)
+        local nextStepText = plant.readyForHarvest and '✅ Prête à récolter !' or string.format('⏱️ %02d:%02d', minutes, seconds)
 
         lib.alertDialog({
             header = '🌱 État de la Plante',
             content = string.format(
                 '**Type:** %s\n\n' ..
-                '**Croissance:** %s%%\n\n' ..
+                '**Croissance:** %s%%%%\n\n' ..
                 '**Arrosage:** %s\n\n' ..
                 '**Engrais:** %s\n\n' ..
                 '**Prochaine étape:** %s',
@@ -348,8 +263,21 @@ RegisterNetEvent('zdrugs:client:showPlantMenu', function(plantId)
     end, plantId)
 end)
 
--- Remplacer l'événement viewPlantState pour utiliser le menu au lieu du DUI
+-- Event principal pour afficher l'état
 AddEventHandler('zdrugs:client:viewPlantState', function(plantId)
-    -- Utiliser le menu au lieu du DUI car plus fiable
+    -- Utiliser le menu ox_lib (simple et fiable)
     TriggerEvent('zdrugs:client:showPlantMenu', plantId)
+end)
+
+-- ============================================
+-- NETTOYAGE
+-- ============================================
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+
+    -- Détruire tous les DUIs
+    for plantId in pairs(activeDUIs) do
+        destroyDUI(plantId)
+    end
 end)
