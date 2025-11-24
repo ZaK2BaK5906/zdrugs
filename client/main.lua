@@ -355,14 +355,6 @@ RegisterNetEvent('zdrugs:client:harvestPlant', function(plantId)
 end)
 
 -- ============================================
--- AFFICHAGE DE L'ÉTAT (DUI)
--- ============================================
-
-RegisterNetEvent('zdrugs:client:viewPlantState', function(plantId)
-    TriggerEvent('zdrugs:client:showDUI', plantId)
-end)
-
--- ============================================
 -- SYNCHRONISATION
 -- ============================================
 
