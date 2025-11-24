@@ -167,14 +167,49 @@ end)
 -- ============================================
 
 RegisterCommand('testnui', function()
-    print('[ZDRUGS] Test NUI command')
+    print('^2========================================^0')
+    print('^2[ZDRUGS] COMMANDE TEST NUI EXÉCUTÉE^0')
+    print('^2========================================^0')
+    print('[ZDRUGS] Envoi du message au NUI...')
+
     SendNUIMessage({
         action = 'show',
-        drugLabel = 'TEST',
+        drugLabel = 'TEST CANNABIS',
         growthPercent = 75,
         watered = true,
         fertilized = false,
         timeText = '05:30'
     })
+
     nuiOpen = true
+    print('[ZDRUGS] Message envoyé ! Le NUI devrait s\'afficher.')
+    print('[ZDRUGS] Si rien ne s\'affiche, vérifiez F8 pour des erreurs JavaScript.')
+    print('^2========================================^0')
 end, false)
+
+-- Commande alternative plus simple
+RegisterCommand('shownui', function()
+    print('^3[ZDRUGS] Commande shownui - Affichage direct^0')
+    TriggerEvent('zdrugs:client:directShowNUI')
+end, false)
+
+-- Event pour affichage direct sans vérification
+RegisterNetEvent('zdrugs:client:directShowNUI', function()
+    print('[ZDRUGS] Direct show NUI - SANS vérification de distance')
+
+    local testPlant = {
+        growthPercent = 85,
+        watered = true,
+        fertilized = false,
+        readyForHarvest = false
+    }
+
+    local testConfig = {
+        label = 'Cannabis',
+        croissance = {
+            duree_totale = 30
+        }
+    }
+
+    showNUI(testPlant, testConfig)
+end)

@@ -344,18 +344,35 @@
     </div>
 
     <script>
+        console.log('%c[ZDRUGS NUI] Script chargé avec succès!', 'color: #4ade80; font-weight: bold; font-size: 14px;');
+        console.log('[ZDRUGS NUI] Attente de messages...');
+
         window.addEventListener('message', (event) => {
+            console.log('%c[ZDRUGS NUI] MESSAGE REÇU:', 'color: #fbbf24; font-weight: bold;', event.data);
+
             const data = event.data;
 
             if (data.action === 'show') {
+                console.log('[ZDRUGS NUI] Action = SHOW, affichage du NUI');
+
                 const app = document.getElementById('app');
+
+                if (!app) {
+                    console.error('[ZDRUGS NUI] ERREUR: Element #app introuvable!');
+                    return;
+                }
+
+                console.log('[ZDRUGS NUI] Element #app trouvé, ajout de la classe "show"');
                 app.classList.add('show');
 
                 // Type de drogue
-                document.getElementById('drugType').textContent = data.drugLabel || 'Plante';
+                const drugLabel = data.drugLabel || 'Plante';
+                console.log('[ZDRUGS NUI] Drug label:', drugLabel);
+                document.getElementById('drugType').textContent = drugLabel;
 
                 // Pourcentage
                 const percent = data.growthPercent || 0;
+                console.log('[ZDRUGS NUI] Growth percent:', percent);
                 document.getElementById('percentText').textContent = percent + '%';
 
                 // Barre de progression
@@ -363,35 +380,52 @@
                 bar.style.width = percent + '%';
 
                 // Couleurs dynamiques
+                let colorName = 'rouge';
                 if (percent >= 100) {
                     bar.style.setProperty('--color-1', '#4ade80');
                     bar.style.setProperty('--color-2', '#22c55e');
+                    colorName = 'vert';
                 } else if (percent >= 66) {
                     bar.style.setProperty('--color-1', '#fbbf24');
                     bar.style.setProperty('--color-2', '#f59e0b');
+                    colorName = 'jaune';
                 } else if (percent >= 33) {
                     bar.style.setProperty('--color-1', '#fb923c');
                     bar.style.setProperty('--color-2', '#f97316');
+                    colorName = 'orange';
                 } else {
                     bar.style.setProperty('--color-1', '#ef4444');
                     bar.style.setProperty('--color-2', '#dc2626');
+                    colorName = 'rouge';
                 }
+                console.log('[ZDRUGS NUI] Couleur barre:', colorName);
 
                 // Statuts
                 document.getElementById('waterStatus').textContent = data.watered ? '✅' : '❌';
                 document.getElementById('fertStatus').textContent = data.fertilized ? '✅' : '❌';
+                console.log('[ZDRUGS NUI] Arrosage:', data.watered, '| Engrais:', data.fertilized);
 
                 // Timer
-                document.getElementById('timerValue').textContent = data.timeText || '00:00';
+                const timeText = data.timeText || '00:00';
+                document.getElementById('timerValue').textContent = timeText;
+                console.log('[ZDRUGS NUI] Temps restant:', timeText);
+
+                console.log('%c[ZDRUGS NUI] ✓ NUI AFFICHÉ AVEC SUCCÈS!', 'color: #22c55e; font-weight: bold; font-size: 16px;');
             }
 
             if (data.action === 'hide') {
+                console.log('[ZDRUGS NUI] Action = HIDE, masquage du NUI');
                 document.getElementById('app').classList.remove('show');
+                console.log('[ZDRUGS NUI] NUI masqué');
             }
         });
 
-        // Debug
-        console.log('NUI loaded successfully');
+        // Test au chargement
+        console.log('[ZDRUGS NUI] Test des éléments DOM:');
+        console.log('  - #app:', document.getElementById('app') ? '✓ OK' : '✗ MANQUANT');
+        console.log('  - #drugType:', document.getElementById('drugType') ? '✓ OK' : '✗ MANQUANT');
+        console.log('  - #progressBar:', document.getElementById('progressBar') ? '✓ OK' : '✗ MANQUANT');
+        console.log('%c[ZDRUGS NUI] Prêt à recevoir des messages!', 'color: #4ade80; font-weight: bold;');
     </script>
 </body>
 </html>
