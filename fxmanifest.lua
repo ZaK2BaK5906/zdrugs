@@ -26,6 +26,12 @@ server_scripts {
     'server/processing.lua'
 }
 
+ui_page 'html/dui.html'
+
+files {
+    'html/dui.html'
+}
+
 dependencies {
     'es_extended',
     'ox_lib',
