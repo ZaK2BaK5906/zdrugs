@@ -11,9 +11,14 @@ function GetParentResourceName() {
     return 'zdrugs';
 }
 
-// Fermer le menu
-function closeMenu() {
+// Fermer le menu visuellement
+function closeMenuVisual() {
     $('#app').removeClass('active');
+}
+
+// Fermer le menu et notifier Lua
+function closeMenu() {
+    closeMenuVisual();
     post('closeMenu', {});
 }
 
@@ -29,8 +34,8 @@ window.addEventListener('message', function(event) {
             break;
 
         case 'closeMenu':
-            console.log('[ZDrugs NUI] Fermeture du menu');
-            closeMenu();
+            console.log('[ZDrugs NUI] Fermeture du menu (depuis Lua)');
+            closeMenuVisual();  // Juste fermer visuellement, PAS de callback!
             break;
     }
 });
