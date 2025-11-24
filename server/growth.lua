@@ -104,6 +104,9 @@ local function updatePlantGrowth(plantId, plant)
                 os.time(),
                 plantId
             })
+
+            -- Sync avec les clients même si on ne change pas d'état
+            TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
         end
     else
         -- Même état, juste mettre à jour le pourcentage
@@ -115,6 +118,9 @@ local function updatePlantGrowth(plantId, plant)
             os.time(),
             plantId
         })
+
+        -- Sync avec les clients pour la mise à jour du pourcentage
+        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
     end
 end
 

@@ -134,51 +134,15 @@ end
 function setupPlantInteractions(plantId, obj, plant)
     local options = {}
 
-    -- Option: Voir état
+    -- Option: Voir état (ouvre le NUI)
     table.insert(options, {
         name = 'view_state',
-        icon = 'fa-solid fa-info-circle',
-        label = 'Voir État',
+        icon = 'fa-solid fa-cannabis',
+        label = 'Gérer la plante',
         onSelect = function()
             TriggerEvent('zdrugs:client:viewPlantState', plantId)
         end
     })
-
-    -- Option: Arroser (si pas encore arrosé)
-    if not plant.watered then
-        table.insert(options, {
-            name = 'water',
-            icon = 'fa-solid fa-hand-holding-droplet',
-            label = 'Arroser',
-            onSelect = function()
-                TriggerEvent('zdrugs:client:waterPlant', plantId)
-            end
-        })
-    end
-
-    -- Option: Mettre engrais (si pas encore fertilisé)
-    if not plant.fertilized then
-        table.insert(options, {
-            name = 'fertilize',
-            icon = 'fa-solid fa-seedling',
-            label = 'Mettre Engrais',
-            onSelect = function()
-                TriggerEvent('zdrugs:client:fertilizePlant', plantId)
-            end
-        })
-    end
-
-    -- Option: Récolter (si prêt)
-    if plant.readyForHarvest then
-        table.insert(options, {
-            name = 'harvest',
-            icon = 'fa-solid fa-scissors',
-            label = 'Récolter',
-            onSelect = function()
-                TriggerEvent('zdrugs:client:harvestPlant', plantId)
-            end
-        })
-    end
 
     -- Utiliser addLocalEntity pour les objets créés dynamiquement
     exports.ox_target:addLocalEntity(obj, options)
