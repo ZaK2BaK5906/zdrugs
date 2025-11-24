@@ -224,13 +224,23 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
         return
     end
 
-    -- IMPORTANT: Vérifier si la plante a atteint un palier (met à jour et reset si besoin)
-    -- Cela évite le problème où le joueur essaie d'arroser avant que le thread de croissance n'ait tourné
-    TriggerEvent('zdrugs:server:updatePlantGrowth', plantId)
+    -- NOUVEAU SYSTÈME: Si le pourcentage dépasse le palier du state actuel, reset eau/engrais
+    local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
+    local currentStageBase = stageBases[plant.growthState] or 0
 
-    -- DEBUG: Afficher l'état de la plante APRÈS la mise à jour
-    print(string.format('[ZDRUGS] Tentative d\'arrosage plante #%d - State: %d, Percent: %.2f%%, Watered: %s, Fertilized: %s',
-        plantId, plant.growthState, plant.growthPercent, tostring(plant.watered), tostring(plant.fertilized)))
+    -- Si la plante a dépassé son palier (ex: 33% mais state=0), c'est qu'on est au nouveau palier
+    if plant.growthPercent > currentStageBase and (plant.watered or plant.fertilized) then
+        print(string.format('[ZDRUGS] Plante #%d dépasse son palier (%d%% > %d%%) - RESET watered/fertilized',
+            plantId, plant.growthPercent, currentStageBase))
+        plant.watered = false
+        plant.fertilized = false
+        plant.growthState = math.floor(plant.growthPercent / 33)
+        MySQL.update('UPDATE zdrugs_plants SET watered = 0, fertilized = 0, growth_state = ? WHERE id = ?', {
+            plant.growthState,
+            plantId
+        })
+        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
+    end
 
     -- Vérifier si déjà arrosée
     if plant.watered then
@@ -297,12 +307,23 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
         return
     end
 
-    -- IMPORTANT: Vérifier si la plante a atteint un palier (met à jour et reset si besoin)
-    TriggerEvent('zdrugs:server:updatePlantGrowth', plantId)
+    -- NOUVEAU SYSTÈME: Si le pourcentage dépasse le palier du state actuel, reset eau/engrais
+    local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
+    local currentStageBase = stageBases[plant.growthState] or 0
 
-    -- DEBUG: Afficher l'état de la plante APRÈS la mise à jour
-    print(string.format('[ZDRUGS] Tentative engrais plante #%d - State: %d, Percent: %.2f%%, Watered: %s, Fertilized: %s',
-        plantId, plant.growthState, plant.growthPercent, tostring(plant.watered), tostring(plant.fertilized)))
+    -- Si la plante a dépassé son palier (ex: 33% mais state=0), c'est qu'on est au nouveau palier
+    if plant.growthPercent > currentStageBase and (plant.watered or plant.fertilized) then
+        print(string.format('[ZDRUGS] Plante #%d dépasse son palier (%d%% > %d%%) - RESET watered/fertilized',
+            plantId, plant.growthPercent, currentStageBase))
+        plant.watered = false
+        plant.fertilized = false
+        plant.growthState = math.floor(plant.growthPercent / 33)
+        MySQL.update('UPDATE zdrugs_plants SET watered = 0, fertilized = 0, growth_state = ? WHERE id = ?', {
+            plant.growthState,
+            plantId
+        })
+        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
+    end
 
     -- Vérifier si déjà fertilisée
     if plant.fertilized then
