@@ -1,7 +1,5 @@
 let currentPlantId = null;
 let currentPlantData = null;
-let updateInterval = null;
-let startTime = null;
 
 // Fonction pour envoyer des messages au client Lua
 function post(url, data) {
@@ -18,12 +16,6 @@ function closeMenuVisual() {
     $('#app').removeClass('active');
     $('#plantMode').hide();
     $('#shopMode').hide();
-
-    // Arrêter le timer
-    if (updateInterval) {
-        clearInterval(updateInterval);
-        updateInterval = null;
-    }
 }
 
 // Fermer le menu et notifier Lua
@@ -91,10 +83,12 @@ function getProgressColor(percent) {
 function updatePlantDisplay(plantData) {
     currentPlantData = plantData;
 
+    console.log('[ZDrugs NUI] Update display - Growth:', plantData.growthPercent, '%, State:', plantData.growthState);
+
     // Type de plante
     $('#plantType').text(plantData.label || 'Plante');
 
-    // Progression
+    // Progression - MISE À JOUR EN TEMPS RÉEL
     const percent = Math.floor(plantData.growthPercent || 0);
     $('#progressBar').css('width', percent + '%');
     $('#progressBar').css('background', getProgressColor(percent));
@@ -120,7 +114,6 @@ function updatePlantDisplay(plantData) {
     // Activer récolte seulement si prêt
     if (plantData.readyForHarvest) {
         $('#harvestBtn').prop('disabled', false);
-        $('#timeRemaining').text('PRÊT !').css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
     } else {
         $('#harvestBtn').prop('disabled', true);
     }
@@ -130,48 +123,14 @@ function updatePlantDisplay(plantData) {
 function openPlantMenu(plantId, plantData) {
     currentPlantId = plantId;
     currentPlantData = plantData;
-    startTime = Date.now();
+
+    console.log('[ZDrugs NUI] Open plant menu - ID:', plantId);
 
     // Mise à jour initiale
     updatePlantDisplay(plantData);
 
     // Afficher le menu
     $('#app').addClass('active');
-
-    // Démarrer le timer live (mise à jour toutes les secondes)
-    if (updateInterval) {
-        clearInterval(updateInterval);
-    }
-
-    updateInterval = setInterval(function() {
-        if (!currentPlantData || currentPlantData.readyForHarvest) {
-            return;
-        }
-
-        // Calculer le temps écoulé depuis l'ouverture
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-
-        // Parser le temps restant initial (format MM:SS)
-        const timeStr = currentPlantData.timeText || '00:00';
-        const parts = timeStr.split(':');
-        const initialMinutes = parseInt(parts[0]) || 0;
-        const initialSeconds = parseInt(parts[1]) || 0;
-        const initialTotalSeconds = (initialMinutes * 60) + initialSeconds;
-
-        // Calculer le nouveau temps restant
-        let remainingSeconds = initialTotalSeconds - elapsed;
-
-        if (remainingSeconds < 0) {
-            remainingSeconds = 0;
-        }
-
-        const minutes = Math.floor(remainingSeconds / 60);
-        const seconds = remainingSeconds % 60;
-        const timeText = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-
-        $('#timeRemaining').text(timeText);
-
-    }, 1000); // Mise à jour toutes les secondes
 }
 
 // ============================================

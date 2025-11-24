@@ -3,6 +3,7 @@
 -- ============================================
 
 local nuiOpen = false
+local currentPlantId = nil
 
 -- ============================================
 -- FONCTIONS
@@ -11,6 +12,8 @@ local nuiOpen = false
 --- Ouvre le NUI avec les données de la plante
 local function openNUI(plantId, plant)
     print('[ZDRUGS] Ouverture NUI pour plante:', plantId)
+
+    currentPlantId = plantId  -- Sauvegarder l'ID de la plante actuelle
 
     local drugConfig = Config.Drogues[plant.drugType]
     if not drugConfig then
@@ -34,6 +37,7 @@ local function openNUI(plantId, plant)
         plantData = {
             label = drugConfig.label,
             growthPercent = growthPercent,
+            growthState = plant.growthState,
             watered = plant.watered,
             fertilized = plant.fertilized,
             readyForHarvest = plant.readyForHarvest,
@@ -57,6 +61,7 @@ local function closeNUI()
 
     SetNuiFocus(false, false)
     nuiOpen = false
+    currentPlantId = nil  -- Reset l'ID
 end
 
 -- ============================================
@@ -80,6 +85,40 @@ RegisterNetEvent('zdrugs:client:viewPlantState', function(plantId)
         print('[ZDRUGS] Données reçues, ouverture NUI')
         openNUI(plantId, plant)
     end, plantId)
+end)
+
+--- Event pour mettre à jour le NUI quand la plante sync
+RegisterNetEvent('zdrugs:client:syncPlant', function(plantId, plant)
+    -- Si le NUI est ouvert pour cette plante, mettre à jour l'affichage
+    if nuiOpen and currentPlantId == plantId then
+        print('[ZDRUGS] Sync plante #', plantId, '- Envoi update au NUI')
+
+        local drugConfig = Config.Drogues[plant.drugType]
+        if not drugConfig then return end
+
+        -- Calculer les données pour le NUI
+        local growthPercent = plant.growthPercent or 0
+        local totalDuration = drugConfig.croissance.duree_totale
+        local remainingPercent = 100 - growthPercent
+        local timeRemaining = (totalDuration * remainingPercent) / 100
+        local minutes = math.floor(timeRemaining / 60)
+        local seconds = math.floor(timeRemaining % 60)
+        local timeText = plant.readyForHarvest and 'PRÊT !' or string.format('%02d:%02d', minutes, seconds)
+
+        -- Envoyer la mise à jour au NUI
+        SendNUIMessage({
+            type = 'updatePlant',
+            plantData = {
+                label = drugConfig.label,
+                growthPercent = growthPercent,
+                growthState = plant.growthState,
+                watered = plant.watered,
+                fertilized = plant.fertilized,
+                readyForHarvest = plant.readyForHarvest,
+                timeText = timeText
+            }
+        })
+    end
 end)
 
 -- ============================================
