@@ -16,14 +16,16 @@ client_scripts {
     'client/main.lua',
     'client/dui.lua',
     'client/processing.lua',
-    'client/items.lua'
+    'client/items.lua',
+    'client/shop.lua'
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/main.lua',
     'server/growth.lua',
-    'server/processing.lua'
+    'server/processing.lua',
+    'server/shop.lua'
 }
 
 ui_page 'html/index.html'

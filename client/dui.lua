@@ -210,6 +210,15 @@ RegisterNUICallback('harvestPlant', function(data, cb)
     cb('ok')
 end)
 
+--- Callback pour acheter un item de la boutique
+RegisterNUICallback('buyItem', function(data, cb)
+    print('[ZDRUGS] Callback buyItem:', data.item, 'x', data.quantity)
+
+    TriggerServerEvent('zdrugs:server:buyItem', data.shopIndex, {item = data.item}, data.quantity)
+
+    cb('ok')
+end)
+
 -- ============================================
 -- NETTOYAGE
 -- ============================================
