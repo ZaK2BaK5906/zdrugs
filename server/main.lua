@@ -33,6 +33,68 @@ CreateThread(function()
     end
 
     print(('[^2zdrugs^0] %s plantes chargées depuis la base de données'):format(#plants))
+
+    -- Récréer les timeouts pour les plantes en croissance (après restart)
+    local timeoutsRecreated = 0
+    for plantId, plant in pairs(activePlants) do
+        if plant.watered and plant.fertilized and plant.growthState < 3 and not plant.readyForHarvest then
+            local drugConfig = Config.Drogues[plant.drugType]
+            if drugConfig then
+                local stageDuration = drugConfig.croissance.duree_totale / 3
+                local timeElapsed = os.time() - plant.lastUpdate
+                local timeRemaining = math.max(0, stageDuration - timeElapsed)
+
+                if timeRemaining <= 0 then
+                    -- Palier déjà atteint pendant l'arrêt → passer immédiatement
+                    local stageBases = {[0] = 33, [1] = 66, [2] = 100}
+                    plant.growthState = plant.growthState + 1
+                    plant.growthPercent = stageBases[plant.growthState - 1] or 100
+                    plant.watered = false
+                    plant.fertilized = false
+
+                    if plant.growthState >= 3 then
+                        plant.readyForHarvest = true
+                    end
+
+                    MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ? WHERE id = ?', {
+                        plant.growthState, plant.growthPercent, plant.readyForHarvest and 1 or 0, plantId
+                    })
+
+                    print(string.format('[ZDRUGS] ⚡ Plante #%d palier atteint pendant arrêt → %d%%', plantId, plant.growthPercent))
+                else
+                    -- Recréer le timeout pour le temps restant
+                    SetTimeout(timeRemaining * 1000, function()
+                        local p = activePlants[plantId]
+                        if p and p.growthState < 3 then
+                            local stageBases = {[0] = 33, [1] = 66, [2] = 100}
+                            p.growthState = p.growthState + 1
+                            p.growthPercent = stageBases[p.growthState - 1] or 100
+                            p.watered = false
+                            p.fertilized = false
+
+                            if p.growthState >= 3 then
+                                p.readyForHarvest = true
+                            end
+
+                            MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ? WHERE id = ?', {
+                                p.growthState, p.growthPercent, p.readyForHarvest and 1 or 0, plantId
+                            })
+
+                            print(string.format('[ZDRUGS] ✅ Plante #%d atteint %d%%!', plantId, p.growthPercent))
+                            TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, p)
+                        end
+                    end)
+
+                    timeoutsRecreated = timeoutsRecreated + 1
+                    print(string.format('[ZDRUGS] 🔄 Timeout recréé pour plante #%d (%.1fs restantes)', plantId, timeRemaining))
+                end
+            end
+        end
+    end
+
+    if timeoutsRecreated > 0 then
+        print(('[^2zdrugs^0] %d timeouts de croissance recréés après restart'):format(timeoutsRecreated))
+    end
 end)
 
 -- ============================================
