@@ -224,25 +224,7 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
         return
     end
 
-    -- NOUVEAU SYSTÈME: Si le pourcentage dépasse le palier du state actuel, reset eau/engrais
-    local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
-    local currentStageBase = stageBases[plant.growthState] or 0
-
-    -- Si la plante a atteint ou dépassé son palier (ex: 33% mais state=0), reset pour nouveau palier
-    if plant.growthPercent >= currentStageBase + 33 and (plant.watered or plant.fertilized) then
-        print(string.format('[ZDRUGS] Plante #%d atteint palier (%d%% >= %d%%) - RESET watered/fertilized',
-            plantId, plant.growthPercent, currentStageBase + 33))
-        plant.watered = false
-        plant.fertilized = false
-        plant.growthState = math.floor(plant.growthPercent / 33)
-        MySQL.update('UPDATE zdrugs_plants SET watered = 0, fertilized = 0, growth_state = ? WHERE id = ?', {
-            plant.growthState,
-            plantId
-        })
-        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
-    end
-
-    -- Vérifier si déjà arrosée
+    -- Vérifier si déjà arrosée (le reset se fait automatiquement dans le thread de croissance)
     if plant.watered then
         TriggerClientEvent('ox_lib:notify', source, {
             type = 'error',
@@ -307,25 +289,7 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
         return
     end
 
-    -- NOUVEAU SYSTÈME: Si le pourcentage dépasse le palier du state actuel, reset eau/engrais
-    local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
-    local currentStageBase = stageBases[plant.growthState] or 0
-
-    -- Si la plante a atteint ou dépassé son palier (ex: 33% mais state=0), reset pour nouveau palier
-    if plant.growthPercent >= currentStageBase + 33 and (plant.watered or plant.fertilized) then
-        print(string.format('[ZDRUGS] Plante #%d atteint palier (%d%% >= %d%%) - RESET watered/fertilized',
-            plantId, plant.growthPercent, currentStageBase + 33))
-        plant.watered = false
-        plant.fertilized = false
-        plant.growthState = math.floor(plant.growthPercent / 33)
-        MySQL.update('UPDATE zdrugs_plants SET watered = 0, fertilized = 0, growth_state = ? WHERE id = ?', {
-            plant.growthState,
-            plantId
-        })
-        TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
-    end
-
-    -- Vérifier si déjà fertilisée
+    -- Vérifier si déjà fertilisée (le reset se fait automatiquement dans le thread de croissance)
     if plant.fertilized then
         TriggerClientEvent('ox_lib:notify', source, {
             type = 'error',
