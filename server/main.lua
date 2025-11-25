@@ -259,6 +259,36 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
     -- Logger l'action
     logAction(xPlayer.identifier, 'water', plant.drugType, {plantId = plantId})
 
+    -- SI on a maintenant eau + engrais, programmer le passage au palier suivant!
+    if plant.watered and plant.fertilized and plant.growthState < 3 then
+        local drugConfig = Config.Drogues[plant.drugType]
+        local stageDuration = (drugConfig.croissance.duree_totale / 3) * 1000 -- ms
+
+        print(string.format('[ZDRUGS] 🌱 Plante #%d commence croissance → Palier dans %.1fs', plantId, stageDuration/1000))
+
+        SetTimeout(stageDuration, function()
+            local p = activePlants[plantId]
+            if p and p.growthState < 3 then
+                local stageBases = {[0] = 33, [1] = 66, [2] = 100}
+                p.growthState = p.growthState + 1
+                p.growthPercent = stageBases[p.growthState - 1] or 100
+                p.watered = false
+                p.fertilized = false
+
+                if p.growthState >= 3 then
+                    p.readyForHarvest = true
+                end
+
+                MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ? WHERE id = ?', {
+                    p.growthState, p.growthPercent, p.readyForHarvest and 1 or 0, plantId
+                })
+
+                print(string.format('[ZDRUGS] ✅ Plante #%d atteint %d%%!', plantId, p.growthPercent))
+                TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, p)
+            end
+        end)
+    end
+
     -- Sync avec les clients
     TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)
 
@@ -323,6 +353,36 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
 
     -- Logger l'action
     logAction(xPlayer.identifier, 'fertilize', plant.drugType, {plantId = plantId})
+
+    -- SI on a maintenant eau + engrais, programmer le passage au palier suivant!
+    if plant.watered and plant.fertilized and plant.growthState < 3 then
+        local drugConfig = Config.Drogues[plant.drugType]
+        local stageDuration = (drugConfig.croissance.duree_totale / 3) * 1000 -- ms
+
+        print(string.format('[ZDRUGS] 🌱 Plante #%d commence croissance → Palier dans %.1fs', plantId, stageDuration/1000))
+
+        SetTimeout(stageDuration, function()
+            local p = activePlants[plantId]
+            if p and p.growthState < 3 then
+                local stageBases = {[0] = 33, [1] = 66, [2] = 100}
+                p.growthState = p.growthState + 1
+                p.growthPercent = stageBases[p.growthState - 1] or 100
+                p.watered = false
+                p.fertilized = false
+
+                if p.growthState >= 3 then
+                    p.readyForHarvest = true
+                end
+
+                MySQL.update('UPDATE zdrugs_plants SET growth_state = ?, growth_percent = ?, watered = 0, fertilized = 0, ready_for_harvest = ? WHERE id = ?', {
+                    p.growthState, p.growthPercent, p.readyForHarvest and 1 or 0, plantId
+                })
+
+                print(string.format('[ZDRUGS] ✅ Plante #%d atteint %d%%!', plantId, p.growthPercent))
+                TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, p)
+            end
+        end)
+    end
 
     -- Sync avec les clients
     TriggerClientEvent('zdrugs:client:syncPlant', -1, plantId, plant)

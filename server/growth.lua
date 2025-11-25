@@ -134,19 +134,13 @@ RegisterNetEvent('zdrugs:server:updatePlantGrowth', function(plantId)
     end
 end)
 
--- Thread de mise à jour de croissance (toutes les 5 secondes en mode test)
-CreateThread(function()
-    while true do
-        Wait(5000)  -- 5 secondes (MODE TEST!)
-
-        local activePlants = getActivePlants()
-        for plantId, plant in pairs(activePlants) do
-            if not plant.readyForHarvest then
-                updatePlantGrowth(plantId, plant)
-            end
-        end
-    end
-end)
+-- ============================================
+-- ANCIEN THREAD SUPPRIMÉ ❌
+-- ============================================
+-- On utilise maintenant des SetTimeout programmés au lieu d'une boucle!
+-- Quand le joueur ajoute eau+engrais → SetTimeout calculé pour le palier
+-- Beaucoup plus optimisé: pas de loop sur 200 plantes toutes les 5 secondes!
+-- Voir waterPlant/fertilizePlant dans server/main.lua
 
 -- ============================================
 -- SYSTÈME DE NETTOYAGE AUTOMATIQUE
