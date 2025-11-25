@@ -228,10 +228,10 @@ RegisterNetEvent('zdrugs:server:waterPlant', function(plantId)
     local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
     local currentStageBase = stageBases[plant.growthState] or 0
 
-    -- Si la plante a dépassé son palier (ex: 33% mais state=0), c'est qu'on est au nouveau palier
-    if plant.growthPercent > currentStageBase and (plant.watered or plant.fertilized) then
-        print(string.format('[ZDRUGS] Plante #%d dépasse son palier (%d%% > %d%%) - RESET watered/fertilized',
-            plantId, plant.growthPercent, currentStageBase))
+    -- Si la plante a atteint ou dépassé son palier (ex: 33% mais state=0), reset pour nouveau palier
+    if plant.growthPercent >= currentStageBase + 33 and (plant.watered or plant.fertilized) then
+        print(string.format('[ZDRUGS] Plante #%d atteint palier (%d%% >= %d%%) - RESET watered/fertilized',
+            plantId, plant.growthPercent, currentStageBase + 33))
         plant.watered = false
         plant.fertilized = false
         plant.growthState = math.floor(plant.growthPercent / 33)
@@ -311,10 +311,10 @@ RegisterNetEvent('zdrugs:server:fertilizePlant', function(plantId)
     local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
     local currentStageBase = stageBases[plant.growthState] or 0
 
-    -- Si la plante a dépassé son palier (ex: 33% mais state=0), c'est qu'on est au nouveau palier
-    if plant.growthPercent > currentStageBase and (plant.watered or plant.fertilized) then
-        print(string.format('[ZDRUGS] Plante #%d dépasse son palier (%d%% > %d%%) - RESET watered/fertilized',
-            plantId, plant.growthPercent, currentStageBase))
+    -- Si la plante a atteint ou dépassé son palier (ex: 33% mais state=0), reset pour nouveau palier
+    if plant.growthPercent >= currentStageBase + 33 and (plant.watered or plant.fertilized) then
+        print(string.format('[ZDRUGS] Plante #%d atteint palier (%d%% >= %d%%) - RESET watered/fertilized',
+            plantId, plant.growthPercent, currentStageBase + 33))
         plant.watered = false
         plant.fertilized = false
         plant.growthState = math.floor(plant.growthPercent / 33)
@@ -437,9 +437,31 @@ RegisterNetEvent('zdrugs:server:requestSync', function()
     TriggerClientEvent('zdrugs:client:syncAllPlants', source, activePlants)
 end)
 
---- Récupère les données d'une plante
+--- Récupère les données d'une plante (avec growthPercent à jour en temps réel)
 lib.callback.register('zdrugs:getPlantData', function(source, plantId)
-    return activePlants[plantId]
+    local plant = activePlants[plantId]
+    if not plant then return nil end
+
+    -- Calculer le pourcentage en temps réel (pas attendre le thread)
+    local drugConfig = Config.Drogues[plant.drugType]
+    if drugConfig and not plant.readyForHarvest then
+        local stageBases = {[0] = 0, [1] = 33, [2] = 66, [3] = 100}
+
+        -- Si la plante n'a pas les 2 items, retourner le palier actuel
+        if not plant.watered or not plant.fertilized then
+            plant.growthPercent = stageBases[plant.growthState] or 0
+        else
+            -- Calculer la croissance en temps réel
+            local currentTime = os.time()
+            local timeGrowing = currentTime - plant.lastUpdate
+            local totalDuration = drugConfig.croissance.duree_totale
+            local stageDuration = totalDuration / 3
+            local percentInStage = math.min((timeGrowing / stageDuration) * 33, 33)
+            plant.growthPercent = (stageBases[plant.growthState] or 0) + percentInStage
+        end
+    end
+
+    return plant
 end)
 
 -- ============================================
